@@ -594,16 +594,17 @@ function gerarBlocoRelatorio(titulo, total, itens, corFundo = '#84cc16') {
         </div>`;
 }
 
+// Bloco atualizado com larguras fixas para forçar o alinhamento perfeito das colunas numéricas
 function gerarBlocoRelatorioDespesas(titulo, objDados, corFundo = '#0284c7') {
     return `
-        <div style="margin-bottom: 20px; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-            <div style="background-color: ${corFundo}; color: #fff; padding: 12px 16px; font-weight: bold; font-size: 14px;">
+        <div style="margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; align-items: stretch;">
+            <div style="background-color: ${corFundo}; color: #fff; padding: 12px 16px; font-weight: bold; font-size: 14px; display: flex; align-items: center; white-space: nowrap; width: 160px; flex-shrink: 0;">
                 ${titulo}
             </div>
-            <div style="background-color: #ffffff; padding: 12px 16px; display: flex; justify-content: flex-end; gap: 30px; font-size: 14px; border-top: 1px solid #e2e8f0;">
-                <div style="color: #475569;">Empenhado: <strong style="color: #1e293b;">${formatarMoeda(objDados.empenhado)}</strong></div>
-                <div style="color: #475569;">Liquidado: <strong style="color: #1e293b;">${formatarMoeda(objDados.liquidado)}</strong></div>
-                <div style="color: #475569;">Pago: <strong style="color: #16a34a;">${formatarMoeda(objDados.pago)}</strong></div>
+            <div style="background-color: #ffffff; padding: 12px 16px; display: flex; justify-content: flex-end; align-items: center; gap: 20px; font-size: 14px; flex-grow: 1;">
+                <div style="color: #475569; width: 240px; text-align: right;">Empenhado: <strong style="color: #1e293b;">${formatarMoeda(objDados.empenhado)}</strong></div>
+                <div style="color: #475569; width: 240px; text-align: right;">Liquidado: <strong style="color: #1e293b;">${formatarMoeda(objDados.liquidado)}</strong></div>
+                <div style="color: #475569; width: 240px; text-align: right;">Pago: <strong style="color: #16a34a;">${formatarMoeda(objDados.pago)}</strong></div>
             </div>
         </div>`;
 }
@@ -697,16 +698,16 @@ function renderizarTabela() {
 
     const dadosDespProc = processarDadosDespesas(despesasFiltradas);
     
-    // CÁLCULO DOS PERCENTUAIS DE APLICAÇÃO
+    // CÁLCULO DOS PERCENTUAIS DE APLICAÇÃO (NOVA REGRA)
     const totalEmpenhadoDesp = dadosDespProc.info12122.empenhado + dadosDespProc.info12361.empenhado + dadosDespProc.info12365.empenhado + dadosDespProc.info12367.empenhado;
     const totalLiquidadoDesp = dadosDespProc.info12122.liquidado + dadosDespProc.info12361.liquidado + dadosDespProc.info12365.liquidado + dadosDespProc.info12367.liquidado;
     const totalPagoDesp = dadosDespProc.info12122.pago + dadosDespProc.info12361.pago + dadosDespProc.info12365.pago + dadosDespProc.info12367.pago;
     
-    const baseReceita = dadosReceitaProc.totalImpostosTransferencias;
+    const baseAplicacaoMinima = dadosReceitaProc.aplicacaoMinimaRecursosProprios;
     
-    const percEmpenhado = baseReceita > 0 ? ((totalEmpenhadoDesp / baseReceita) * 100).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
-    const percLiquidado = baseReceita > 0 ? ((totalLiquidadoDesp / baseReceita) * 100).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
-    const percPago = baseReceita > 0 ? ((totalPagoDesp / baseReceita) * 100).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
+    const percEmpenhado = baseAplicacaoMinima > 0 ? ((totalEmpenhadoDesp * 25) / baseAplicacaoMinima).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
+    const percLiquidado = baseAplicacaoMinima > 0 ? ((totalLiquidadoDesp * 25) / baseAplicacaoMinima).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
+    const percPago = baseAplicacaoMinima > 0 ? ((totalPagoDesp * 25) / baseAplicacaoMinima).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
 
     const containerBlocosDesp = document.getElementById('container-blocos-despesas');
     
@@ -735,14 +736,14 @@ function renderizarTabela() {
                     </div>
                 </div>
                 <div style="text-align: center; margin-top: 10px; font-size: 11px; color: #64748b;">
-                    * Percentuais calculados sobre o Total de Impostos e Transferências (${formatarMoeda(baseReceita)})
+                    * Percentuais calculados com base na Aplicação Mínima Obrigatória (${formatarMoeda(baseAplicacaoMinima)}) utilizando a fórmula: (Valor * 25) / Aplicação Mínima
                 </div>
             </div>
 
-            ${gerarBlocoRelatorioDespesas('Regra 1 - Função/Sub 12.122 | Fonte 1 | Vínculos: 200.012, 210.000, 220.000, 240.000', dadosDespProc.info12122, '#0284c7')}
-            ${gerarBlocoRelatorioDespesas('Regra 2 - Função/Sub 12.361 | Fonte 1 | Vínculos: 200.012, 210.000, 220.000, 240.000', dadosDespProc.info12361, '#0284c7')}
-            ${gerarBlocoRelatorioDespesas('Regra 3 - Função/Sub 12.365 | Fonte 1 | Vínculos: 200.012, 210.000, 220.000, 240.000', dadosDespProc.info12365, '#0284c7')}
-            ${gerarBlocoRelatorioDespesas('Regra 4 - Função/Sub 12.367 | Fonte 1 | Vínculos: 200.012, 210.000, 220.000, 240.000', dadosDespProc.info12367, '#0284c7')}
+            ${gerarBlocoRelatorioDespesas('Função/Sub 12.122', dadosDespProc.info12122, '#0284c7')}
+            ${gerarBlocoRelatorioDespesas('Função/Sub 12.361', dadosDespProc.info12361, '#0284c7')}
+            ${gerarBlocoRelatorioDespesas('Função/Sub 12.365', dadosDespProc.info12365, '#0284c7')}
+            ${gerarBlocoRelatorioDespesas('Função/Sub 12.367', dadosDespProc.info12367, '#0284c7')}
         `;
     }
 }
