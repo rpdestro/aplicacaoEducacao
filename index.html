@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Contábil e Financeiro - LDO / SIOPS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 20px;
+            color: #334155;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Estilos gerais para tabelas e dropdowns */
+        .responsive-table th {
+            background-color: #1e293b;
+            color: white;
+            padding: 12px 10px;
+            font-size: 13px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .responsive-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+            color: #334155;
+            background: white;
+        }
+
+        .responsive-table tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        .text-right {
+            text-align: right !important;
+        }
+
+        .btn-filtro-excel {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.2s;
+        }
+
+        .btn-filtro-excel:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .active-filter {
+            background-color: #f59e0b !important;
+            border-color: #d97706 !important;
+            color: #ffffff !important;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div style="text-align: center; margin-bottom: 25px;">
+        <h2 style="color: #1e293b; margin-bottom: 10px;">Departamento de Planejamento e Orçamento</h2>
+        <p style="color: #64748b; font-size: 14px; margin-top: 0;">Selecione os arquivos CSV de Receitas e Despesas para iniciar as análises</p>
+    </div>
+
+    <!-- SEÇÃO DE UPLOAD COM OS NOVOS CARDS -->
+    <div id="upload-section" style="max-width: 1100px; margin: 0 auto 30px auto; padding: 0 15px; box-sizing: border-box;">
+        
+        <!-- GRID DE CARDS -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 20px; margin-bottom: 25px;">
+            
+            <!-- CARD RECEITAS -->
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; background: #dcfce7; color: #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">↗</div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 16px; color: #1e293b; font-weight: 600;">Receitas</h3>
+                                <span style="font-size: 12px; color: #64748b;">Nat.Despesa R • Descrição K • Valor AB</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ÁREA DE DROP / CLIQUE -->
+                    <label for="csv-receitas" style="border: 2px dashed #cbd5e1; border-radius: 10px; padding: 30px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; cursor: pointer; transition: all 0.2s; text-align: center; margin-bottom: 16px; box-sizing: border-box;" id="drop-zone-receitas">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 10px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <span style="font-size: 14px; font-weight: 500; color: #334155;" id="label-receitas">Arraste o CSV ou clique para selecionar</span>
+                        <span style="font-size: 11px; color: #94a3b8; margin-top: 4px;">CSV com até 80 colunas • separador ; ou ,</span>
+                        <input type="file" id="csv-receitas" accept=".csv" style="display: none;" onchange="atualizarNomeArquivo('receitas')">
+                    </label>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; background: #f1f5f9; padding: 8px 12px; border-radius: 6px;">
+                    <span>📄 Mapeamento:</span>
+                    <span style="background: white; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; font-family: monospace; font-size: 11px;">R=17</span>
+                    <span style="background: white; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; font-family: monospace; font-size: 11px;">K=10</span>
+                    <span style="background: white; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; font-family: monospace; font-size: 11px;">AB=27</span>
+                </div>
+            </div>
+
+            <!-- CARD DESPESAS -->
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; background: #fee2e2; color: #dc2626; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">↙</div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 16px; color: #1e293b; font-weight: 600;">Despesas</h3>
+                                <span style="font-size: 12px; color: #64748b;">BJ • BW • L • N • P</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ÁREA DE DROP / CLIQUE -->
+                    <label for="csv-despesas" style="border: 2px dashed #cbd5e1; border-radius: 10px; padding: 30px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; cursor: pointer; transition: all 0.2s; text-align: center; margin-bottom: 16px; box-sizing: border-box;" id="drop-zone-despesas">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 10px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <span style="font-size: 14px; font-weight: 500; color: #334155;" id="label-despesas">Arraste o CSV ou clique para selecionar</span>
+                        <span style="font-size: 11px; color: #94a3b8; margin-top: 4px;">CSV com até 80 colunas • separador ; ou ,</span>
+                        <input type="file" id="csv-despesas" accept=".csv" style="display: none;" onchange="atualizarNomeArquivo('despesas')">
+                    </label>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; background: #f1f5f9; padding: 8px 12px; border-radius: 6px;">
+                    <span>📄 Mapeamento:</span>
+                    <span style="background: white; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; font-family: monospace; font-size: 11px;">BJ=61</span>
+                    <span style="background: white; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; font-family: monospace; font-size: 11px;">BW=74</span>
+                    <span style="background: white; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; font-family: monospace; font-size: 11px;">L=11</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- BOTÃO CARREGAR DADOS -->
+        <div style="text-align: center;">
+            <button id="btn-processar" style="padding: 12px 40px; background-color: #0284c7; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 6px rgba(2, 132, 199, 0.2); transition: background-color 0.2s;">
+                Carregar Dados
+            </button>
+        </div>
+    </div>
+
+    <!-- DASHBOARD DE RESULTADOS (INJETADO VIA JS) -->
+    <div id="dashboard" class="hidden">
+        <div id="resultado-status"></div>
+    </div>
+
+    <!-- SCRIPT PRINCIPAL -->
+    <script src="script.js"></script>
+</body>
+</html>
