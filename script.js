@@ -3,13 +3,14 @@ let dadosGlobaisReceitas = [];
 let dadosGlobaisDespesas = [];
 let filtrosAplicados = {};
 
-// Instâncias Globais dos Gráficos (necessário para destruí-los ao atualizar os filtros)
+// Instâncias Globais dos Gráficos
 let chartRecInst = null;
 let chartDespInst = null;
 
-// Variáveis de paginação
+// Variáveis de paginação e FUNDEB
 let limiteReceitas = 50;
 let limiteDespesas = 50;
+let valorTotalFundeb = 1; 
 
 const mapaIdParaColuna = {
     'rec_NatDespesa': 'Nat.Despesa',
@@ -40,7 +41,7 @@ function sanitizarExportacaoExcel(valor) {
 }
 
 // ==========================================================================
-/* LEITURA E PROCESSAMENTO DE ARQUIVOS */
+/* LEITURA E PROCESSAMENTO DE ARQUIVOS (MOTOR ORIGINAL RESTAURADO) */
 // ==========================================================================
 function lerArquivo(arquivo) {
     return new Promise((resolve, reject) => {
@@ -54,7 +55,7 @@ function lerArquivo(arquivo) {
 window.atualizarNomeArquivo = function(tipo) {
     const input = document.getElementById(`csv-${tipo}`);
     const label = document.getElementById(`label-${tipo}`);
-    const sublabel = document.getElementById(`sublabel-${tipo}`);
+    const sublabel = document.getElementById(`sublabel-${tipo}`) || document.querySelector(`#drop-zone-${tipo} .dropzone-subtitle`);
     const badge = document.getElementById(`badge-linhas-${tipo}`);
 
     if (input.files && input.files[0]) {
@@ -63,7 +64,7 @@ window.atualizarNomeArquivo = function(tipo) {
         
         label.textContent = nomeArquivoSeguro;
         label.style.color = '#0f172a'; 
-        sublabel.innerHTML = `<span style="color: ${corAtiva}; font-weight: bold;">✓</span> <span style="color: ${corAtiva}; font-weight: 500;">${nomeArquivoSeguro} anexado</span>`;
+        if (sublabel) sublabel.innerHTML = `<span style="color: ${corAtiva}; font-weight: bold;">✓</span> <span style="color: ${corAtiva}; font-weight: 500;">${nomeArquivoSeguro} anexado</span>`;
         
         if(badge) {
             badge.classList.remove('hidden');
@@ -135,7 +136,7 @@ function formatarMoeda(valor) {
 }
 
 // ==========================================================================
-/* CÁLCULOS E AGRUPAMENTOS CONTÁBEIS */
+/* CÁLCULOS E AGRUPAMENTOS CONTÁBEIS (COM NOVO FUNDEB) */
 // ==========================================================================
 function processarDadosReceitas(dados) {
     let municipalItens = [], uniaoFPMItens = [], estadoItens = [], deducoesItens = [];
@@ -160,12 +161,17 @@ function processarDadosReceitas(dados) {
         else if (nat.startsWith('1721.50') || nat.startsWith('1721.51') || nat.startsWith('1721.52') || natClean.startsWith('172150') || natClean.startsWith('172151') || natClean.startsWith('172152')) { estadoItens.push(item); estadoTotal += valor; }
 
         if (natClean.startsWith('9510')) { deducoesItens.push(item); deducoesTotal += valor; }
-        if (nat.includes('1751.50.0.1.00.00') || natClean.includes('175150010000') || nat.includes('1321.01.1.1.02.06') || natClean.includes('132101110206')) { fundebItens.push(item); fundebTotal += valor; }
+        
+        if (nat.startsWith('1751.50') || natClean.startsWith('175150') || nat.includes('1321.01.1.1.02.06') || natClean.includes('132101110206')) { fundebItens.push(item); fundebTotal += valor; }
+        
         if (nat.includes('1715.53.0.1.01.00') || natClean.includes('171553010100')) { fundebMatriculasETItens.push(item); fundebMatriculasETTotal += valor; }
+        
         if (codigosAplicacao.includes(nat) || codigosAplicacaoClean.includes(natClean)) { aplicacaoFinanceiraItens.push(item); aplicacaoFinanceiraTotal += valor; }
         if (nat.startsWith('1714') || natClean.startsWith('1714')) { fndeItens.push(item); fndeTotal += valor; }
         if (codigosEstadoTransf.includes(nat) || codigosEstadoTransfClean.includes(natClean)) { estadoTransferenciasItens.push(item); estadoTransferenciasTotal += valor; }
     });
+
+    valorTotalFundeb = fundebTotal > 0 ? fundebTotal : 1; 
 
     const totalImpostosTransferencias = municipalTotal + uniaoFPMTotal + estadoTotal;
     const aplicacaoObrigatoria25 = totalImpostosTransferencias * 0.25;
@@ -194,6 +200,9 @@ function processarDadosDespesas(dados) {
     let info12361 = { empenhado: 0, liquidado: 0, pago: 0 };
     let info12365 = { empenhado: 0, liquidado: 0, pago: 0 };
     let info12367 = { empenhado: 0, liquidado: 0, pago: 0 };
+    
+    let infoVinculo261 = { empenhado: 0, liquidado: 0, pago: 0 };
+    let infoVinculo262 = { empenhado: 0, liquidado: 0, pago: 0 };
 
     dados.forEach(item => {
         const funcSub = String(item['Função/SubFunção'] || '').trim();
@@ -208,15 +217,20 @@ function processarDadosDespesas(dados) {
         const liquidado = limparEConverterNumero(item['Valor Liquidado']);
         const pago = limparEConverterNumero(item['Valor Pago']);
 
+        // Filtro por Fonte 1 para Detalhamento de Subfunção
         if (isFonte1 && isVinculoValid) {
             if (funcSub.includes('12.122') || funcSub.replace(/\./g, '').includes('12122')) { info12122.empenhado += empenhado; info12122.liquidado += liquidado; info12122.pago += pago; } 
             else if (funcSub.includes('12.361') || funcSub.replace(/\./g, '').includes('12361')) { info12361.empenhado += empenhado; info12361.liquidado += liquidado; info12361.pago += pago; } 
             else if (funcSub.includes('12.365') || funcSub.replace(/\./g, '').includes('12365')) { info12365.empenhado += empenhado; info12365.liquidado += liquidado; info12365.pago += pago; } 
             else if (funcSub.includes('12.367') || funcSub.replace(/\./g, '').includes('12367')) { info12367.empenhado += empenhado; info12367.liquidado += liquidado; info12367.pago += pago; }
         }
+
+        // Correção aplicada aqui: buscando estritamente por '261.000' e '262.000'
+        if (vinculo.includes('261.000')) { infoVinculo261.empenhado += empenhado; infoVinculo261.liquidado += liquidado; infoVinculo261.pago += pago; }
+        else if (vinculo.includes('262.000')) { infoVinculo262.empenhado += empenhado; infoVinculo262.liquidado += liquidado; infoVinculo262.pago += pago; }
     });
 
-    return { info12122, info12361, info12365, info12367 };
+    return { info12122, info12361, info12365, info12367, infoVinculo261, infoVinculo262 };
 }
 
 // ==========================================================================
@@ -231,53 +245,16 @@ window.imprimirRelatorio = function() {
                 body { background: white !important; }
                 body * { visibility: hidden; }
                 #modulo-receitas, #modulo-receitas *, #modulo-despesas, #modulo-despesas * { visibility: visible; }
-                
-                /* Ajuste para alinhar o conteúdo no topo esquerdo ao imprimir */
-                #modulo-receitas, #modulo-despesas { 
-                    position: absolute; 
-                    left: 0; 
-                    top: 0; 
-                    width: 100%; 
-                    box-shadow: none !important; 
-                    margin: 0 !important; 
-                    padding: 0 !important; 
-                    border: none !important; 
-                }
-                
-                /* Oculta botões e controles na impressão */
-                button, .abas-navegacao, .btn-filtro-excel, .visao-controles { 
-                    display: none !important; 
-                }
-                
-                /* Libera a quebra de rolagem das tabelas */
-                .responsive-table, div[style*="overflow"] { 
-                    overflow: visible !important; 
-                    max-height: none !important; 
-                }
-                
-                /* Otimizações de quebra de página e cores */
-                .bloco-relatorio { 
-                    page-break-inside: avoid; 
-                    margin-bottom: 20px !important; 
-                    border: 1px solid #ccc !important; 
-                }
-                .bloco-cabecalho { 
-                    background-color: #f1f5f9 !important; 
-                    -webkit-print-color-adjust: exact !important; 
-                    print-color-adjust: exact !important; 
-                }
-                
-                /* Garante que a área do gráfico imprima com as cores exatas */
-                canvas {
-                    -webkit-print-color-adjust: exact !important; 
-                    print-color-adjust: exact !important; 
-                }
+                #modulo-receitas, #modulo-despesas { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none !important; margin: 0 !important; padding: 0 !important; border: none !important; }
+                button, .abas-navegacao, .btn-filtro-excel, .visao-controles { display: none !important; }
+                .responsive-table, div[style*="overflow"] { overflow: visible !important; max-height: none !important; }
+                .bloco-relatorio, .fundeb-card { page-break-inside: avoid; margin-bottom: 20px !important; border: 1px solid #ccc !important; }
+                .bloco-cabecalho { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                canvas { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             }
         `;
         document.head.appendChild(style);
     }
-    
-    // Dispara a janela de impressão
     window.print();
 };
 
@@ -315,8 +292,6 @@ function exportarExcel(tipo, botaoAtivador) {
     if (typeof XLSX === 'undefined') {
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-        script.integrity = 'sha512-r22gChDygvZIFOxW65K0Bbt/U5hUEnJj1T22q+O1Z9jP/2tN+M7c4L5r6V66b5w5W/Pq+Q==';
-        script.crossOrigin = 'anonymous';
         script.onload = gerar;
         script.onerror = () => { alert('Erro ao carregar biblioteca XLSX.'); botaoAtivador.innerHTML = textoOriginal; botaoAtivador.disabled = false; };
         document.head.appendChild(script);
@@ -517,7 +492,7 @@ function construirEstruturaTabelaBase(dados, containerId, tipo) {
 }
 
 // ==========================================================================
-/* RENDERIZAÇÃO VISUAL MODERNIZADA DOS BLOCOS (CARDS) E GRÁFICOS */
+/* RENDERIZAÇÃO VISUAL DOS BLOCOS E GRÁFICOS */
 // ==========================================================================
 function carregarChartJS(callback) {
     if (typeof Chart === 'undefined') {
@@ -574,14 +549,14 @@ function desenharGraficosDinamicos(recProc, despProc) {
             chartRecInst = new Chart(ctxRec, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Municipal', 'União (FPM)', 'Estado', 'Fundeb', 'Outras Adicionais'],
+                    labels: ['Municipal', 'União (FPM)', 'Estado', 'Fundeb Principal', 'Outras Adicionais'],
                     datasets: [{
                         data: [
                             recProc.municipal.total,
                             recProc.uniaoFPM.total,
                             recProc.estado.total,
                             recProc.fundeb.total,
-                            (recProc.aplicacaoFinanceira.total + recProc.fnde.total + recProc.estadoTransferencias.total)
+                            (recProc.aplicacaoFinanceira.total + recProc.fnde.total + recProc.estadoTransferencias.total + recProc.fundebMatriculasET.total)
                         ],
                         backgroundColor: ['#10b981', '#059669', '#34d399', '#0ea5e9', '#6366f1'],
                         borderWidth: 0,
@@ -600,34 +575,27 @@ function desenharGraficosDinamicos(recProc, despProc) {
             });
         }
 
-        // --- GRÁFICO DE DESPESAS (VALOR PAGO) ---
+        // --- GRÁFICO DE DESPESAS ---
         const ctxDesp = document.getElementById('chartDespesas');
         if (ctxDesp) {
             if (chartDespInst) chartDespInst.destroy();
             chartDespInst = new Chart(ctxDesp, {
-                type: 'doughnut',
+                type: 'bar',
                 data: {
                     labels: ['12.122 (Admin)', '12.361 (Fundamental)', '12.365 (Infantil)', '12.367 (Especial)'],
                     datasets: [{
-                        data: [
-                            despProc.info12122.pago,
-                            despProc.info12361.pago,
-                            despProc.info12365.pago,
-                            despProc.info12367.pago
-                        ],
-                        backgroundColor: ['#3b82f6', '#6366f1', '#8b5cf6', '#14b8a6'],
-                        borderWidth: 0,
-                        hoverOffset: 6
+                        label: 'Liquidado (R$)',
+                        data: [despProc.info12122.liquidado, despProc.info12361.liquidado, despProc.info12365.liquidado, despProc.info12367.liquidado],
+                        backgroundColor: ['rgba(59, 130, 246, 0.7)', 'rgba(99, 102, 241, 0.7)', 'rgba(139, 92, 246, 0.7)', 'rgba(20, 184, 166, 0.7)'],
+                        borderWidth: 1,
+                        borderRadius: 4
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'right', labels: { font: { family: 'Inter', size: 12 }, color: '#475569', usePointStyle: true, padding: 20 } },
-                        tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', padding: 12, callbacks: { label: function(context) { return ' ' + formatarMoeda(context.raw); } } }
-                    },
-                    cutout: '65%'
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
                 }
             });
         }
@@ -638,14 +606,20 @@ function renderizarTabela() {
     const dataAtual = new Date();
     const textoReferencia = `${dataAtual.toLocaleString('pt-BR', { month: 'long' }).toUpperCase()}/${dataAtual.getFullYear()}`;
     
-    // CABEÇALHO OFICIAL MODERNIZADO
+    // CABEÇALHO OFICIAL MODERNIZADO COM LOGO
     const cabecalhoOficial = `
         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px 20px; margin-bottom: 32px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.03); text-align: center; position: relative; overflow: hidden;">
             <div style="position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, #0284c7, #10b981);"></div>
-            <img src="./brasao.png" alt="Brasão Oficial" style="height: 85px; margin-bottom: 20px;">
+            
+            <!-- INÍCIO DO LOGOTIPO -->
+            <img src="./brasao.png" 
+                 alt="Brasão da Prefeitura" 
+                 style="height: 85px; width: auto; margin-bottom: 16px; object-fit: contain; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+            <!-- FIM DO LOGOTIPO -->
+
             <h2 style="margin: 0 0 4px 0; font-size: 1.15rem; color: #0f172a; font-weight: 700; letter-spacing: -0.5px;">PREFEITURA MUNICIPAL DE BOTUCATU</h2>
             <h3 style="margin: 0 0 6px 0; font-size: 0.95rem; color: #475569; font-weight: 600;">SECRETARIA MUNICIPAL DA FAZENDA</h3>
-            <p style="margin: 0 0 24px 0; font-size: 0.85rem; color: #64748b;">Departamento de Planejamento, Orçamento e Gestão Econômica</p>
+            <p style="margin: 0 0 24px 0; font-size: 0.85rem; color: #64748b;">Departamento de Planejamento e Orçamento (LDO/SIOPS)</p>
             
             <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
                 <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 500; color: #475569;">
@@ -678,14 +652,13 @@ function renderizarTabela() {
     const containerBlocosRec = document.getElementById('container-blocos-receitas');
     if (containerBlocosRec) {
         containerBlocosRec.innerHTML = cabecalhoOficial + `
-            <!-- CARD DO GRÁFICO DE RECEITAS -->
             <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.03); display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-around;">
                 <div style="width: 100%; max-width: 450px; height: 250px;">
                     <canvas id="chartReceitas"></canvas>
                 </div>
                 <div style="flex: 1; min-width: 300px; padding: 0 15px;">
                     <h4 style="margin: 0 0 12px 0; color: #0f172a; font-size: 1.15rem;">Composição das Receitas de Ensino</h4>
-                    <p style="color: #64748b; font-size: 0.9rem; line-height: 1.6; margin: 0;">O gráfico ilustra a distribuição percentual das principais fontes de recursos destinados à educação neste período. Note o peso proporcional dos recursos próprios (Impostos) em relação aos repasses federais e estaduais.</p>
+                    <p style="color: #64748b; font-size: 0.9rem; line-height: 1.6; margin: 0;">O gráfico ilustra a distribuição percentual das principais fontes de recursos destinados à educação neste período.</p>
                 </div>
             </div>
 
@@ -712,12 +685,14 @@ function renderizarTabela() {
             <div style="margin: 30px 0 16px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
                 <h4 style="margin: 0; color: #0f172a; font-size: 1.1rem;">Fundeb e Receitas Adicionais</h4>
             </div>
-            ${gerarBlocoRelatorio('FUNDEB (Col. R: 1751.50... / 1321.01...)', recProc.fundeb.total, recProc.fundeb.itens, '#0ea5e9', '#f0f9ff')}
+            
+            ${gerarBlocoRelatorio('FUNDEB PRINCIPAL (Col. R: 1751.50... / 1321.01...)', recProc.fundeb.total, recProc.fundeb.itens, '#0ea5e9', '#f0f9ff')}
+            ${gerarBlocoRelatorio('TRANSFERÊNCIA RECURSOS FUNDEB DESTINADOS CRIAÇÃO MATRÍCULAS E.T', recProc.fundebMatriculasET.total, recProc.fundebMatriculasET.itens, '#0284c7', '#f0f9ff')}
+            
             ${gerarBlocoRelatorio('RECEITA DA APLICAÇÃO FINANCEIRA', recProc.aplicacaoFinanceira.total, recProc.aplicacaoFinanceira.itens, '#0284c7', '#f0f9ff')}
             ${gerarBlocoRelatorio('TRANSFERÊNCIAS DO FNDE', recProc.fnde.total, recProc.fnde.itens, '#0284c7', '#f0f9ff')}
             ${gerarBlocoRelatorio('TRANSFERÊNCIAS DO ESTADO (Ensino)', recProc.estadoTransferencias.total, recProc.estadoTransferencias.itens, '#0284c7', '#f0f9ff')}
             
-            <!-- NOVO SUBTOTAL DE RECEITAS ADICIONAIS COM DESTAQUE VIBRANTE E FIXAÇÃO DE IMPRESSÃO -->
             <div style="background: linear-gradient(to right, #0284c7, #0369a1); color: white; padding: 16px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
                 <span style="font-weight: 600; font-size: 14px;">RECEITAS ADICIONAIS PARA O FINANCIAMENTO DO ENSINO</span>
                 <span style="font-weight: 700; font-size: 18px; font-family: 'Consolas', monospace;">${formatarMoeda(recProc.totalReceitasAdicionaisEnsino)}</span>
@@ -755,23 +730,99 @@ function renderizarTabela() {
     const pLiq = baseAplicacaoMinima > 0 ? ((tLiq * 25) / baseAplicacaoMinima).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
     const pPag = baseAplicacaoMinima > 0 ? ((tPag * 25) / baseAplicacaoMinima).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
 
+    // ---------------- CÁLCULOS MATRIZ FUNDEB ----------------
+    // Totais Absolutos
+    const tFundebEmp = despProc.infoVinculo261.empenhado + despProc.infoVinculo262.empenhado;
+    const tFundebLiq = despProc.infoVinculo261.liquidado + despProc.infoVinculo262.liquidado;
+    const tFundebPag = despProc.infoVinculo261.pago + despProc.infoVinculo262.pago;
+
+    // Percentuais (Cálculo Reverso sobre a Receita Arrecadada)
+    const calcPct = (v) => valorTotalFundeb > 0 ? ((v / valorTotalFundeb) * 100) : 0;
+    const fmtPct = (p) => p.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '%';
+
     const containerBlocosDesp = document.getElementById('container-blocos-despesas');
     if (containerBlocosDesp) {
         containerBlocosDesp.innerHTML = cabecalhoOficial + `
             
+            <!-- NOVA MATRIZ FUNDEB 261/262 (Estilo Tabela Excel) -->
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                <div style="background-color: #f8fafc; padding: 16px 20px; border-bottom: 1px solid #e2e8f0;">
+                    <h3 style="margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 700;">Acompanhamento do FUNDEB (Vínculos 261.0000 e 262.0000)</h3>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background-color: #ffffff; color: #475569; font-weight: bold; border-bottom: 1px solid #cbd5e1; text-align: center;">
+                                <th style="padding: 12px; border-right: 1px solid #e2e8f0;" colspan="2">VÍNCULO</th>
+                                <th style="padding: 12px; text-align: right;">EMPENHADO</th>
+                                <th style="padding: 12px; text-align: right;">LIQUIDADO</th>
+                                <th style="padding: 12px; text-align: right;">PAGO</th>
+                            </tr>
+                        </thead>
+                        <tbody style="font-family: 'Consolas', monospace; text-align: right;">
+                            
+                            <!-- Valores Absolutos -->
+                            <tr style="border-bottom: 1px solid #f1f5f9; color: #1e293b;">
+                                <td style="padding: 10px; border-right: 1px solid #e2e8f0; text-align: center;" colspan="2">02.261.0000</td>
+                                <td style="padding: 10px;">${formatarMoeda(despProc.infoVinculo261.empenhado)}</td>
+                                <td style="padding: 10px;">${formatarMoeda(despProc.infoVinculo261.liquidado)}</td>
+                                <td style="padding: 10px;">${formatarMoeda(despProc.infoVinculo261.pago)}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #cbd5e1; color: #1e293b;">
+                                <td style="padding: 10px; border-right: 1px solid #e2e8f0; text-align: center;" colspan="2">02.262.0000</td>
+                                <td style="padding: 10px;">${formatarMoeda(despProc.infoVinculo262.empenhado)}</td>
+                                <td style="padding: 10px;">${formatarMoeda(despProc.infoVinculo262.liquidado)}</td>
+                                <td style="padding: 10px;">${formatarMoeda(despProc.infoVinculo262.pago)}</td>
+                            </tr>
+                            <tr style="background-color: #93c5fd; font-weight: bold; color: #1e3a8a; border-bottom: 1px solid #cbd5e1; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+                                <td style="padding: 10px; text-align: center; border-right: 1px solid #60a5fa;" colspan="2">TOTAL</td>
+                                <td style="padding: 10px;">${formatarMoeda(tFundebEmp)}</td>
+                                <td style="padding: 10px;">${formatarMoeda(tFundebLiq)}</td>
+                                <td style="padding: 10px;">${formatarMoeda(tFundebPag)}</td>
+                            </tr>
+                            
+                            <!-- Percentuais -->
+                            <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+                                <td rowspan="2" style="padding: 10px; font-weight: bold; color: #475569; vertical-align: middle; text-align: center; border-right: 1px solid #e2e8f0; width: 140px; font-family: 'Inter', sans-serif;">PERCENTUAL</td>
+                                <td style="padding: 10px; text-align: left; border-right: 1px solid #e2e8f0; font-family: 'Inter', sans-serif; font-weight: 600; color: #334155;">
+                                    261.0000 <br><span style="font-size: 11px; color: #64748b; font-weight: 500;">(Mínimo 70%)</span>
+                                </td>
+                                <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo261.empenhado))}</td>
+                                <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo261.liquidado))}</td>
+                                <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo261.pago))}</td>
+                            </tr>
+                            <tr style="background-color: #f8fafc; border-bottom: 1px solid #cbd5e1; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+                                <td style="padding: 10px; text-align: left; border-right: 1px solid #e2e8f0; font-family: 'Inter', sans-serif; font-weight: 600; color: #334155;">
+                                    262.0000 <span style="font-size: 11px; color: #64748b; font-weight: 500;">(Máximo 30%)</span>
+                                </td>
+                                <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo262.empenhado))}</td>
+                                <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo262.liquidado))}</td>
+                                <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo262.pago))}</td>
+                            </tr>
+                            <tr style="background-color: #93c5fd; font-weight: bold; color: #1e3a8a; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+                                <td style="padding: 10px; text-align: center; border-right: 1px solid #60a5fa;" colspan="2">TOTAL</td>
+                                <td style="padding: 10px;">${fmtPct(calcPct(tFundebEmp))}</td>
+                                <td style="padding: 10px;">${fmtPct(calcPct(tFundebLiq))}</td>
+                                <td style="padding: 10px;">${fmtPct(calcPct(tFundebPag))}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- CARD DO GRÁFICO DE DESPESAS -->
             <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.03); display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-around;">
                 <div style="width: 100%; max-width: 450px; height: 250px;">
                     <canvas id="chartDespesas"></canvas>
                 </div>
                 <div style="flex: 1; min-width: 300px; padding: 0 15px;">
-                    <h4 style="margin: 0 0 12px 0; color: #0f172a; font-size: 1.15rem;">Distribuição das Despesas (Valores Pagos)</h4>
-                    <p style="color: #64748b; font-size: 0.9rem; line-height: 1.6; margin: 0;">Análise da alocação de recursos por subfunção educacional. Os dados refletem exclusivamente os <strong>Valores Pagos</strong> utilizando os recursos da Fonte 1, demonstrando onde o orçamento foi efetivamente concretizado e liquidado financeiramente.</p>
+                    <h4 style="margin: 0 0 12px 0; color: #0f172a; font-size: 1.15rem;">Distribuição das Despesas (Valores Liquidados)</h4>
+                    <p style="color: #64748b; font-size: 0.9rem; line-height: 1.6; margin: 0;">Análise da alocação de recursos por subfunção educacional na Fonte 1.</p>
                 </div>
             </div>
 
             <div style="background: linear-gradient(135deg, #1e293b, #0f172a); color: white; padding: 24px; border-radius: 16px; margin-bottom: 32px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-                <h3 style="margin: 0 0 20px 0; font-size: 15px; text-transform: uppercase; text-align: center; color: #94a3b8; letter-spacing: 1px; font-weight: 600;">Resumo da Aplicação Obrigatória</h3>
+                <h3 style="margin: 0 0 20px 0; font-size: 15px; text-transform: uppercase; text-align: center; color: #94a3b8; letter-spacing: 1px; font-weight: 600;">Resumo da Aplicação Obrigatória (25%)</h3>
                 <div style="display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 200px; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 16px; border-radius: 12px;">
                         <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Empenhado</div>
@@ -801,7 +852,6 @@ function renderizarTabela() {
         `;
     }
 
-    // Chama a função para desenhar os gráficos após montar a estrutura do HTML
     desenharGraficosDinamicos(recProc, despProc);
 }
 
@@ -809,13 +859,20 @@ function renderizarTabela() {
 /* INJEÇÃO DA INTERFACE PRINCIPAL */
 // ==========================================================================
 document.getElementById('btn-processar').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-processar');
     const inputReceitas = document.getElementById('csv-receitas').files[0];
     const inputDespesas = document.getElementById('csv-despesas').files[0];
 
     if (!inputReceitas || !inputDespesas) { alert('Por favor, selecione os dois arquivos antes de continuar.'); return; }
 
+    const textoOriginal = btn.innerHTML;
+    btn.innerHTML = "⏳ Processando...";
+    btn.disabled = true;
+
     try {
         const [textoReceitas, textoDespesas] = await Promise.all([lerArquivo(inputReceitas), lerArquivo(inputDespesas)]);
+        
+        // Mapeamentos exatos preservados do script original
         const mapeamentoReceitas = { 'R': 'Nat.Despesa', 'K': 'Descrição', 'AB': 'Valor Receita' };
         const mapeamentoDespesas = { 'BJ': 'Função/SubFunção', 'BW': 'Vínculo', 'AT': 'Fonte', 'L': 'Valor Empenhado', 'N': 'Valor Liquidado', 'P': 'Valor Pago' };
 
@@ -880,5 +937,8 @@ document.getElementById('btn-processar').addEventListener('click', async () => {
     } catch (erro) {
         console.error(erro);
         alert(`Erro durante o processamento: ${erro.message}`);
+    } finally {
+        btn.innerHTML = textoOriginal;
+        btn.disabled = false;
     }
 });
