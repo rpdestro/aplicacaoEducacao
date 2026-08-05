@@ -430,3 +430,72 @@ th:last-child .excel-dropdown {
     font-size: 13px;
     margin: 10px 0 0 0;
 }
+
+/* --- BANNER RESUMO OBRIGATÓRIO (TEMA CLARO) --- */
+.banner-resumo-claro {
+    background-color: #f8fafc; /* Fundo cinza super leve */
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+}
+
+.banner-titulo {
+    color: #475569; /* Cinza médio/chumbo */
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    margin-top: 0;
+}
+
+.banner-cards-container {
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+}
+
+.banner-card {
+    flex: 1;
+    background-color: #ffffff; /* Fundo do cartão branco */
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.banner-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.banner-label {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.banner-valor {
+    color: #1e293b; /* Texto escuro quase preto */
+    font-size: 16px;
+    font-weight: 600;
+    font-family: 'Consolas', 'Courier New', monospace;
+    margin-bottom: 8px;
+}
+
+.banner-percentual {
+    font-size: 24px;
+    font-weight: 800;
+}
+
+/* Cores das porcentagens ajustadas para dar contraste no fundo branco */
+.perc-empenhado { color: #0284c7; } /* Azul vibrante */
+.perc-liquidado { color: #0d9488; } /* Verde-água (Teal) mais fechado */
+.perc-pago      { color: #16a34a; } /* Verde principal forte */

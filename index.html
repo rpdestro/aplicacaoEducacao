@@ -210,6 +210,81 @@
         .btn-filtro-excel { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: white; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 4px; transition: background 0.2s; }
         .btn-filtro-excel:hover { background: rgba(255, 255, 255, 0.3); }
         .active-filter { background-color: #f59e0b !important; border-color: #d97706 !important; color: #ffffff !important; font-weight: bold; }
+    
+    /* --- ESTILOS PARA OS CARDS DE DETALHAMENTO (ETI) --- */
+        .detalhamento-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .detalhamento-card {
+            display: flex;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: transform 0.2s;
+        }
+        
+        .detalhamento-card:hover {
+            transform: scale(1.005);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .detalhamento-label {
+            width: 25%;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 13px;
+            border-left: 5px solid; /* Cor injetada pelo tema */
+        }
+
+        .detalhamento-valores {
+            display: flex;
+            width: 75%;
+            justify-content: space-around;
+            align-items: center;
+            padding: 12px 16px;
+        }
+
+        .detalhamento-item {
+            display: flex;
+            flex-direction: column;
+            text-align: right;
+            min-width: 140px;
+        }
+
+        .detalhamento-item-titulo {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .detalhamento-item-valor {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* Temas de Cores dos Cards */
+        .theme-blue .detalhamento-label { border-left-color: #3b82f6; background-color: #eff6ff; color: #1e3a8a; }
+        .theme-blue .valor-destaque { color: #3b82f6; }
+        
+        .theme-purple .detalhamento-label { border-left-color: #8b5cf6; background-color: #f5f3ff; color: #4c1d95; }
+        .theme-purple .valor-destaque { color: #8b5cf6; }
+        
+        .theme-green .detalhamento-label { border-left-color: #10b981; background-color: #ecfdf5; color: #065f46; }
+        .theme-green .valor-destaque { color: #10b981; }
+
+        .theme-total .detalhamento-label { border-left-color: #475569; background-color: #f8fafc; color: #0f172a; }
+        .theme-total .valor-destaque { color: #0f172a; }
     </style>
 </head>
 <body>

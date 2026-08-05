@@ -927,18 +927,172 @@ document.getElementById('btn-processar').addEventListener('click', async () => {
             </div>
         `;
 
-        construirEstruturaTabelaBase(dadosGlobaisReceitas, 'nova-tabela-receitas', 'receitas');
-        construirEstruturaTabelaBase(dadosGlobaisDespesas, 'nova-tabela-despesas', 'despesas');
-        renderizarTabela();
-        
-        document.getElementById('upload-section').style.display = 'none';
-        alternarAba('receitas');
+            // ... (código que já existe acima no seu arquivo)
+            
+            construirEstruturaTabelaBase(dadosGlobaisReceitas, 'nova-tabela-receitas', 'receitas');
+            construirEstruturaTabelaBase(dadosGlobaisDespesas, 'nova-tabela-despesas', 'despesas');
+            renderizarTabela();
 
-    } catch (erro) {
-        console.error(erro);
-        alert(`Erro durante o processamento: ${erro.message}`);
-    } finally {
-        btn.innerHTML = textoOriginal;
-        btn.disabled = false;
-    }
+            // --- INÍCIO DA INJEÇÃO SEGURA (TABELA ETI) ---
+            try {
+                const resultadosETI = processarTabelaETI(dadosGlobaisDespesas); 
+                const htmlDaTabelaETI = gerarHTMLTabelaETI(resultadosETI); 
+                
+                // Alterado: Injetando diretamente no Relatório Executivo de Despesas
+                const containerRelatorio = document.getElementById('container-blocos-despesas');
+                if (containerRelatorio) {
+                    containerRelatorio.insertAdjacentHTML('beforeend', htmlDaTabelaETI);
+                }
+            } catch (erroEti) {
+                console.warn("Aviso: Falha ao carregar a tabela ETI isolada.", erroEti);
+            }
+            // --- FIM DA INJEÇÃO SEGURA ---
+
+            document.getElementById('upload-section').style.display = 'none';
+            alternarAba('receitas');
+
+        } catch (erro) {
+            console.error(erro);
+            alert(`Erro durante o processamento: ${erro.message}`);
+        } finally {
+            btn.innerHTML = textoOriginal;
+            btn.disabled = false;
+        }
 });
+
+// ============================================================================
+// MÓDULO ISOLADO: FUNDEB ETI (Educação Tempo Integral)
+// ============================================================================
+
+function processarTabelaETI(dados) {
+    let eti261 = { empenhado: 0, liquidado: 0, pago: 0 };
+    let eti262 = { empenhado: 0, liquidado: 0, pago: 0 };
+
+    dados.forEach(item => {
+        // Mapeamento defensivo garantindo a leitura da coluna BW ou nomes equivalentes
+        const vinculoBW = String(item['BW'] || item['Vínculo'] || item['CA Codigo'] || '').trim();
+        
+        const empenhado = limparEConverterNumero(item['L'] || item['Valor Empenhado']);
+        const liquidado = limparEConverterNumero(item['N'] || item['Valor Liquidado']);
+        const pago = limparEConverterNumero(item['P'] || item['Valor Pago']);
+
+        if (vinculoBW.includes('261.004') || vinculoBW.includes('261.0004')) {
+            eti261.empenhado += empenhado;
+            eti261.liquidado += liquidado;
+            eti261.pago += pago;
+        } else if (vinculoBW.includes('262.004') || vinculoBW.includes('262.0004')) {
+            eti262.empenhado += empenhado;
+            eti262.liquidado += liquidado;
+            eti262.pago += pago;
+        }
+    });
+
+    const totalETI = {
+        empenhado: eti261.empenhado + eti262.empenhado,
+        liquidado: eti261.liquidado + eti262.liquidado,
+        pago: eti261.pago + eti262.pago
+    };
+
+    return { eti261, eti262, totalETI };
+}
+
+function gerarHTMLTabelaETI(resultadosETI) {
+    // Função auxiliar para formatar em Reais (R$)
+    const formatBRL = (valor) => {
+        const num = Number(valor) || 0;
+        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    };
+
+    let html = `
+    <div style="margin-top: 30px;">
+        <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 12px; text-transform: uppercase;">
+            FUNDEB - FOMENTO A MATRÍCULAS ETI (EDUCAÇÃO TEMPO INTEGRAL)
+        </h3>
+        <div class="detalhamento-container">
+    `;
+
+    // Paleta de cores para intercalar nos cards
+    const temas = ['theme-blue', 'theme-purple', 'theme-green'];
+    let idxTema = 0;
+
+    let totalEmpenhado = 0;
+    let totalLiquidado = 0;
+    let totalPago = 0;
+
+    // CORREÇÃO: Filtrando 'TOTAL' e 'TOTALETI' para não gerar card em duplicidade
+    const chaves = Array.isArray(resultadosETI) 
+        ? resultadosETI 
+        : Object.keys(resultadosETI).filter(k => {
+            const chaveUpper = k.toUpperCase();
+            return chaveUpper !== 'TOTAL' && chaveUpper !== 'TOTALETI';
+        });
+
+    chaves.forEach(item => {
+        const codigo = typeof item === 'string' ? item : (item.codigo || item.vinculo);
+        const dados = typeof item === 'string' ? resultadosETI[item] : item;
+        
+        let codigoExibicao = codigo;
+        if (codigo.toLowerCase() === 'eti261') codigoExibicao = '05.261.0004';
+        if (codigo.toLowerCase() === 'eti262') codigoExibicao = '05.262.0004';
+        
+        const emp = dados.empenhado || dados.Empenhado || dados.L || 0;
+        const liq = dados.liquidado || dados.Liquidado || dados.N || 0;
+        const pag = dados.pago || dados.Pago || dados.P || 0;
+
+        totalEmpenhado += Number(emp);
+        totalLiquidado += Number(liq);
+        totalPago += Number(pag);
+
+        const tema = temas[idxTema % temas.length];
+        idxTema++;
+
+        html += `
+            <div class="detalhamento-card ${tema}">
+                <div class="detalhamento-label">
+                    ${codigoExibicao}
+                </div>
+                <div class="detalhamento-valores">
+                    <div class="detalhamento-item">
+                        <span class="detalhamento-item-titulo">Empenhado:</span>
+                        <span class="detalhamento-item-valor">${formatBRL(emp)}</span>
+                    </div>
+                    <div class="detalhamento-item">
+                        <span class="detalhamento-item-titulo">Liquidado:</span>
+                        <span class="detalhamento-item-valor">${formatBRL(liq)}</span>
+                    </div>
+                    <div class="detalhamento-item">
+                        <span class="detalhamento-item-titulo">Pago:</span>
+                        <span class="detalhamento-item-valor valor-destaque">${formatBRL(pag)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    // Injeta o Card final de TOTAL
+    html += `
+            <div class="detalhamento-card theme-total">
+                <div class="detalhamento-label" style="text-transform: uppercase;">
+                    TOTAL
+                </div>
+                <div class="detalhamento-valores">
+                    <div class="detalhamento-item">
+                        <span class="detalhamento-item-titulo">Empenhado:</span>
+                        <span class="detalhamento-item-valor">${formatBRL(totalEmpenhado)}</span>
+                    </div>
+                    <div class="detalhamento-item">
+                        <span class="detalhamento-item-titulo">Liquidado:</span>
+                        <span class="detalhamento-item-valor">${formatBRL(totalLiquidado)}</span>
+                    </div>
+                    <div class="detalhamento-item">
+                        <span class="detalhamento-item-titulo">Pago:</span>
+                        <span class="detalhamento-item-valor valor-destaque">${formatBRL(totalPago)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+
+    return html;
+}
