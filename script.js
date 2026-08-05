@@ -836,26 +836,33 @@ function renderizarTabela() {
                 </div>
             </div>
 
-            <div style="background: linear-gradient(135deg, #1e293b, #0f172a); color: white; padding: 24px; border-radius: 16px; margin-bottom: 32px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-                <h3 style="margin: 0 0 20px 0; font-size: 15px; text-transform: uppercase; text-align: center; color: #94a3b8; letter-spacing: 1px; font-weight: 600;">Resumo da Aplicação Obrigatória (25%)</h3>
-                <div style="display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 200px; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 16px; border-radius: 12px;">
-                        <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Empenhado</div>
-                        <div style="font-size: 15px; font-family: 'Consolas', monospace; color: #e2e8f0; margin-bottom: 4px;">${formatarMoeda(tEmp)}</div>
-                        <div style="font-size: 24px; font-weight: 800; color: #38bdf8;">${pEmp}%</div>
-                    </div>
-                    <div style="flex: 1; min-width: 200px; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 16px; border-radius: 12px;">
-                        <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Liquidado</div>
-                        <div style="font-size: 15px; font-family: 'Consolas', monospace; color: #e2e8f0; margin-bottom: 4px;">${formatarMoeda(tLiq)}</div>
-                        <div style="font-size: 24px; font-weight: 800; color: #34d399;">${pLiq}%</div>
-                    </div>
-                    <div style="flex: 1; min-width: 200px; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 16px; border-radius: 12px;">
-                        <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Pago</div>
-                        <div style="font-size: 15px; font-family: 'Consolas', monospace; color: #e2e8f0; margin-bottom: 4px;">${formatarMoeda(tPag)}</div>
-                        <div style="font-size: 24px; font-weight: 800; color: #a3e635;">${pPag}%</div>
-                    </div>
-                </div>
-            </div>
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; color: #0f172a; padding: 24px; border-radius: 16px; margin-bottom: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+    <h3 style="margin: 0 0 20px 0; font-size: 15px; text-transform: uppercase; text-align: center; color: #475569; letter-spacing: 1px; font-weight: 700;">Resumo da Aplicação Obrigatória (25%)</h3>
+    <div style="display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+        
+        <!-- CARD EMPENHADO -->
+        <div style="flex: 1; min-width: 200px; text-align: center; background: #f8fafc; border: 1px solid #cbd5e1; padding: 16px; border-radius: 12px;">
+            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 8px; font-weight: 600;">Empenhado</div>
+            <div style="font-size: 15px; font-family: 'Consolas', monospace; color: #1e293b; margin-bottom: 4px; font-weight: 600;">${formatarMoeda(tEmp)}</div>
+            <div style="font-size: 24px; font-weight: 800; color: #0284c7;">${pEmp}%</div>
+        </div>
+        
+        <!-- CARD LIQUIDADO -->
+        <div style="flex: 1; min-width: 200px; text-align: center; background: #f8fafc; border: 1px solid #cbd5e1; padding: 16px; border-radius: 12px;">
+            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 8px; font-weight: 600;">Liquidado</div>
+            <div style="font-size: 15px; font-family: 'Consolas', monospace; color: #1e293b; margin-bottom: 4px; font-weight: 600;">${formatarMoeda(tLiq)}</div>
+            <div style="font-size: 24px; font-weight: 800; color: #059669;">${pLiq}%</div>
+        </div>
+        
+        <!-- CARD PAGO -->
+        <div style="flex: 1; min-width: 200px; text-align: center; background: #f8fafc; border: 1px solid #cbd5e1; padding: 16px; border-radius: 12px;">
+            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 8px; font-weight: 600;">Pago</div>
+            <div style="font-size: 15px; font-family: 'Consolas', monospace; color: #1e293b; margin-bottom: 4px; font-weight: 600;">${formatarMoeda(tPag)}</div>
+            <div style="font-size: 24px; font-weight: 800; color: #16a34a;">${pPag}%</div>
+        </div>
+        
+    </div>
+</div>
 
             <div style="margin: 30px 0 16px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
                 <h4 style="margin: 0; color: #0f172a; font-size: 1.1rem;">Detalhamento por Função/Subfunção (Fonte 1)</h4>
@@ -865,7 +872,19 @@ function renderizarTabela() {
             ${gerarBlocoRelatorioDespesas('12.365 - Educ. Infantil', despProc.info12365, '#8b5cf6', '#f5f3ff')}
             ${gerarBlocoRelatorioDespesas('12.367 - Educ. Especial', despProc.info12367, '#14b8a6', '#f0fdfa')}
         `;
-    }
+        // ==========================================================================
+        /* INJEÇÃO SEGURA E DINÂMICA (TABELA ETI) */
+        // ==========================================================================
+        try {
+            // Utilizando 'despesasFiltradas' para que os valores dos cards respondam aos filtros
+            const resultadosETI = processarTabelaETI(despesasFiltradas); 
+            const htmlDaTabelaETI = gerarHTMLTabelaETI(resultadosETI); 
+            containerBlocosDesp.insertAdjacentHTML('beforeend', htmlDaTabelaETI);
+        } catch (erroEti) {
+            console.warn("Aviso: Falha ao carregar a tabela ETI isolada.", erroEti);
+        }
+        
+    } // Fechamento do if (containerBlocosDesp) existente no seu código
 
     desenharGraficosDinamicos(recProc, despProc);
 }
@@ -945,26 +964,7 @@ document.getElementById('btn-processar').addEventListener('click', async () => {
             construirEstruturaTabelaBase(dadosGlobaisReceitas, 'nova-tabela-receitas', 'receitas');
             construirEstruturaTabelaBase(dadosGlobaisDespesas, 'nova-tabela-despesas', 'despesas');
             renderizarTabela();
-
-            // ==========================================================================
-	    /* INÍCIO DA INJEÇÃO SEGURA (TABELA ETI) */
-            // ==========================================================================
-	    try {
-                const resultadosETI = processarTabelaETI(dadosGlobaisDespesas); 
-                const htmlDaTabelaETI = gerarHTMLTabelaETI(resultadosETI); 
-                
-                /* ALTERADO: INJETADO DIRETAMENTE NO RELATÓRIO EXECUTIVO DE DESPESAS */
-                const containerRelatorio = document.getElementById('container-blocos-despesas');
-                if (containerRelatorio) {
-                    containerRelatorio.insertAdjacentHTML('beforeend', htmlDaTabelaETI);
-                }
-            } catch (erroEti) {
-                console.warn("Aviso: Falha ao carregar a tabela ETI isolada.", erroEti);
-            }
-            // ==========================================================================
-	    /* FINAL DA INJEÇÃO SEGURA (TABELA ETI) */
-	    // ==========================================================================
-	    
+            
             document.getElementById('upload-section').style.display = 'none';
             alternarAba('receitas');
 
