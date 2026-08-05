@@ -1,4 +1,6 @@
+// ==========================================================================
 // VARIÁVEIS E ESTADOS GLOBAIS
+// ==========================================================================
 let dadosGlobaisReceitas = [];
 let dadosGlobaisDespesas = [];
 let filtrosAplicados = {};
@@ -41,7 +43,7 @@ function sanitizarExportacaoExcel(valor) {
 }
 
 // ==========================================================================
-/* LEITURA E PROCESSAMENTO DE ARQUIVOS (MOTOR ORIGINAL RESTAURADO) */
+/* LEITURA E PROCESSAMENTO DE ARQUIVOS*/
 // ==========================================================================
 function lerArquivo(arquivo) {
     return new Promise((resolve, reject) => {
@@ -184,7 +186,7 @@ function processarDadosReceitas(dados) {
         uniaoFPM: { itens: uniaoFPMItens, total: uniaoFPMTotal },
         estado: { itens: estadoItens, total: estadoTotal },
         totalImpostosTransferencias, aplicacaoObrigatoria25,
-        deducoes: { itens: deducoesItens, total: absDeducoes }, aplicacaoMinimaRecursosProprios,
+        deducoes: { itens: deducoesItens, total: deducoesTotal }, aplicacaoMinimaRecursosProprios,
         fundeb: { itens: fundebItens, total: fundebTotal },
         fundebMatriculasET: { itens: fundebMatriculasETItens, total: fundebMatriculasETTotal },
         aplicacaoFinanceira: { itens: aplicacaoFinanceiraItens, total: aplicacaoFinanceiraTotal },
@@ -225,8 +227,10 @@ function processarDadosDespesas(dados) {
             else if (funcSub.includes('12.367') || funcSub.replace(/\./g, '').includes('12367')) { info12367.empenhado += empenhado; info12367.liquidado += liquidado; info12367.pago += pago; }
         }
 
-        // Correção aplicada aqui: buscando estritamente por '261.000' e '262.000'
-        if (vinculo.includes('261.000')) { infoVinculo261.empenhado += empenhado; infoVinculo261.liquidado += liquidado; infoVinculo261.pago += pago; }
+        // ==========================================================================
+	/* CORREÇÃO APLICADA - DESPESA FUNDEB, BUSCANDO ESTRITAMENTE POR '261.000' e '262.000' */
+        // ==========================================================================
+	if (vinculo.includes('261.000')) { infoVinculo261.empenhado += empenhado; infoVinculo261.liquidado += liquidado; infoVinculo261.pago += pago; }
         else if (vinculo.includes('262.000')) { infoVinculo262.empenhado += empenhado; infoVinculo262.liquidado += liquidado; infoVinculo262.pago += pago; }
     });
 
@@ -450,7 +454,7 @@ function construirEstruturaTabelaBase(dados, containerId, tipo) {
     if (!dados || dados.length === 0) { container.innerHTML = `<p class="no-data">Nenhum registro encontrado.</p>`; return; }
 
     const cabecalhos = Object.keys(dados[0]);
-    let html = `<div class="responsive-table" style="width: 100%; overflow-x: auto; overflow-y: visible; border-radius: 12px; box-sizing: border-box; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+    let html = `<div class="responsive-table" style="width: 100%; overflow: visible; border-radius: 12px; box-sizing: border-box; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
                 <table class="tabela-moderna" style="width: 100%; border-collapse: collapse; box-sizing: border-box;">
                 <thead style="background-color: #f8fafc; color: #475569; border-bottom: 2px solid #cbd5e1;"><tr>`;
 
@@ -540,9 +544,12 @@ function gerarBlocoRelatorioDespesas(titulo, objDados, corDestaque = '#3b82f6', 
         </div>`;
 }
 
+
+// ==========================================================================
+/* GRÁFICO DE RECEITAS */
+// ==========================================================================
 function desenharGraficosDinamicos(recProc, despProc) {
-    carregarChartJS(() => {
-        // --- GRÁFICO DE RECEITAS ---
+    carregarChartJS(() => {        
         const ctxRec = document.getElementById('chartReceitas');
         if (ctxRec) {
             if (chartRecInst) chartRecInst.destroy();
@@ -575,8 +582,10 @@ function desenharGraficosDinamicos(recProc, despProc) {
             });
         }
 
-        // --- GRÁFICO DE DESPESAS ---
-        const ctxDesp = document.getElementById('chartDespesas');
+        // ==========================================================================
+	/* GRÁFICO DE DESPESAS */
+        // ==========================================================================
+	const ctxDesp = document.getElementById('chartDespesas');
         if (ctxDesp) {
             if (chartDespInst) chartDespInst.destroy();
             chartDespInst = new Chart(ctxDesp, {
@@ -632,7 +641,9 @@ function renderizarTabela() {
         </div>
     `;
 
-    // ---------------- RECEITAS ----------------
+    // ==========================================================================
+    /* RECEITAS */
+    // ==========================================================================
     const receitasFiltradas = obterDadosFiltrados('receitas');
     const tbodyRec = document.getElementById('tbody_rows_receitas');
     const containerBtnMaisRec = document.getElementById('container_btn_mais_receitas');
@@ -699,8 +710,10 @@ function renderizarTabela() {
             </div>
         `;
     }
-
-    // ---------------- DESPESAS ----------------
+    
+    // ==========================================================================
+    /* DESPESAS */
+    // ==========================================================================
     const despesasFiltradas = obterDadosFiltrados('despesas');
     const tbodyDesp = document.getElementById('tbody_rows_despesas');
     const containerBtnMaisDesp = document.getElementById('container_btn_mais_despesas');
@@ -730,8 +743,10 @@ function renderizarTabela() {
     const pLiq = baseAplicacaoMinima > 0 ? ((tLiq * 25) / baseAplicacaoMinima).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
     const pPag = baseAplicacaoMinima > 0 ? ((tPag * 25) / baseAplicacaoMinima).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
 
-    // ---------------- CÁLCULOS MATRIZ FUNDEB ----------------
-    // Totais Absolutos
+    // ==========================================================================
+    /* CÁLCULOS MATRIZ FUNDEB */
+    // ==========================================================================
+    /* Totais Absolutos */
     const tFundebEmp = despProc.infoVinculo261.empenhado + despProc.infoVinculo262.empenhado;
     const tFundebLiq = despProc.infoVinculo261.liquidado + despProc.infoVinculo262.liquidado;
     const tFundebPag = despProc.infoVinculo261.pago + despProc.infoVinculo262.pago;
@@ -926,19 +941,19 @@ document.getElementById('btn-processar').addEventListener('click', async () => {
                 <div id="container-tabela-despesas-wrapper" style="display: none;"><div id="nova-tabela-despesas"></div></div>
             </div>
         `;
-
-            // ... (código que já existe acima no seu arquivo)
-            
+	    
             construirEstruturaTabelaBase(dadosGlobaisReceitas, 'nova-tabela-receitas', 'receitas');
             construirEstruturaTabelaBase(dadosGlobaisDespesas, 'nova-tabela-despesas', 'despesas');
             renderizarTabela();
 
-            // --- INÍCIO DA INJEÇÃO SEGURA (TABELA ETI) ---
-            try {
+            // ==========================================================================
+	    /* INÍCIO DA INJEÇÃO SEGURA (TABELA ETI) */
+            // ==========================================================================
+	    try {
                 const resultadosETI = processarTabelaETI(dadosGlobaisDespesas); 
                 const htmlDaTabelaETI = gerarHTMLTabelaETI(resultadosETI); 
                 
-                // Alterado: Injetando diretamente no Relatório Executivo de Despesas
+                /* ALTERADO: INJETADO DIRETAMENTE NO RELATÓRIO EXECUTIVO DE DESPESAS */
                 const containerRelatorio = document.getElementById('container-blocos-despesas');
                 if (containerRelatorio) {
                     containerRelatorio.insertAdjacentHTML('beforeend', htmlDaTabelaETI);
@@ -946,8 +961,10 @@ document.getElementById('btn-processar').addEventListener('click', async () => {
             } catch (erroEti) {
                 console.warn("Aviso: Falha ao carregar a tabela ETI isolada.", erroEti);
             }
-            // --- FIM DA INJEÇÃO SEGURA ---
-
+            // ==========================================================================
+	    /* FINAL DA INJEÇÃO SEGURA (TABELA ETI) */
+	    // ==========================================================================
+	    
             document.getElementById('upload-section').style.display = 'none';
             alternarAba('receitas');
 
@@ -961,7 +978,7 @@ document.getElementById('btn-processar').addEventListener('click', async () => {
 });
 
 // ============================================================================
-// MÓDULO ISOLADO: FUNDEB ETI (Educação Tempo Integral)
+/* MÓDULO ISOLADO: FUNDEB ETI (Educação Tempo Integral) */
 // ============================================================================
 
 function processarTabelaETI(dados) {
@@ -996,9 +1013,11 @@ function processarTabelaETI(dados) {
     return { eti261, eti262, totalETI };
 }
 
+    // ==========================================================================
+    /* FUNÇÃO AUXILIAR PARA FORMATAR EM REAIS (R$) */
+    // ==========================================================================
 function gerarHTMLTabelaETI(resultadosETI) {
-    // Função auxiliar para formatar em Reais (R$)
-    const formatBRL = (valor) => {
+        const formatBRL = (valor) => {
         const num = Number(valor) || 0;
         return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     };
@@ -1011,7 +1030,9 @@ function gerarHTMLTabelaETI(resultadosETI) {
         <div class="detalhamento-container">
     `;
 
-    // Paleta de cores para intercalar nos cards
+    // ==========================================================================
+    /* PALETA DE CORES PARA INTERCALAR NOS CARDS */
+    // ==========================================================================
     const temas = ['theme-blue', 'theme-purple', 'theme-green'];
     let idxTema = 0;
 
@@ -1019,7 +1040,9 @@ function gerarHTMLTabelaETI(resultadosETI) {
     let totalLiquidado = 0;
     let totalPago = 0;
 
-    // CORREÇÃO: Filtrando 'TOTAL' e 'TOTALETI' para não gerar card em duplicidade
+    // ==========================================================================
+    /* CORREÇÃO: Filtrando 'TOTAL' e 'TOTALETI' para não gerar card em duplicidade */
+    // ==========================================================================
     const chaves = Array.isArray(resultadosETI) 
         ? resultadosETI 
         : Object.keys(resultadosETI).filter(k => {
@@ -1069,7 +1092,9 @@ function gerarHTMLTabelaETI(resultadosETI) {
         `;
     });
 
-    // Injeta o Card final de TOTAL
+    // ==========================================================================
+    /* INJETA O CARD FINAL DE TOTAL */
+    // ==========================================================================
     html += `
             <div class="detalhamento-card theme-total">
                 <div class="detalhamento-label" style="text-transform: uppercase;">

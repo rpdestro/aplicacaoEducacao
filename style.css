@@ -1,5 +1,5 @@
 /* ==========================================================================
-   1. RESET E ESTILOS GERAIS
+   RESET E ESTILOS GERAIS
    ========================================================================== */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -39,7 +39,7 @@ header p {
 }
 
 /* ==========================================================================
-   2. ÁREA DE UPLOAD E COMPONENTES DE AÇÃO
+   ÁREA DE UPLOAD E COMPONENTES DE AÇÃO
    ========================================================================== */
 .upload-container {
     display: flex;
@@ -90,7 +90,7 @@ button#btn-processar:hover {
 }
 
 /* ==========================================================================
-   3. RESUMO CONSOLIDADO (FINANCE CARDS)
+   RESUMO CONSOLIDADO (FINANCE CARDS)
    ========================================================================== */
 .finance-cards-container {
     display: flex;
@@ -167,7 +167,7 @@ button#btn-processar:hover {
 }
 
 /* ==========================================================================
-   4. ESTRUTURA E ELEMENTOS DAS TABELAS DETALHADAS
+   ESTRUTURA E ELEMENTOS DAS TABELAS DETALHADAS
    ========================================================================== */
 .tables-container {
     display: flex;
@@ -200,9 +200,8 @@ button#btn-processar:hover {
 }
 
 .responsive-table {
-    max-height: 380px;
-    min-height: 290px; /* Expandido para acomodar confortavelmente o novo padrão visual */
-    overflow-y: auto;
+    min-height: 290px; /* EXPANDIDO PARA ACOMODAR CONFORTAVELMENTE O NOVO PADRÃO VISUAL */
+    overflow: visible !important; /* GARANTE QUE O MENU SUSPENSO NÃO SEJA CORTADO */
     border: 1px solid #e2e8f0;
     border-radius: 6px;
     background-color: #ffffff;
@@ -216,7 +215,7 @@ table {
 }
 
 th {
-    background-color: #2f3e4e; /* Tom escuro para destacar as caixas de filtro conforme imagem */
+    background-color: #2f3e4e; /* TOM ESCURO PARA DESTACAR AS CAIXAS DE FILTRO CONFORME IMAGEM */
     padding: 10px;
     position: sticky;
     top: 0;
@@ -241,7 +240,7 @@ tr:hover td {
 }
 
 /* ==========================================================================
-   5. INTERFACE DE FILTROS (PADRÃO ATUALIZADO DO SEU LAYOUT DE REFERÊNCIA)
+   INTERFACE DE FILTROS (PADRÃO ATUALIZADO DO SEU LAYOUT DE REFERÊNCIA)
    ========================================================================== */
 .th-container {
     display: flex;
@@ -418,7 +417,7 @@ th:last-child .excel-dropdown {
 }
 
 /* ==========================================================================
-   6. CLASSES UTILITÁRIAS E FEEDBACKS
+   CLASSES UTILITÁRIAS E FEEDBACKS
    ========================================================================== */
 .hidden {
     display: none !important;
