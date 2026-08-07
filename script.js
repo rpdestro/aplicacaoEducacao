@@ -255,6 +255,12 @@ window.imprimirRelatorio = function() {
                 .bloco-relatorio, .fundeb-card { page-break-inside: avoid; margin-bottom: 20px !important; border: 1px solid #ccc !important; }
                 .bloco-cabecalho { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                 canvas { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                
+                /* NOVA REGRA: Força a quebra de página */
+                .quebra-pagina-impressao { 
+                    page-break-before: always !important; 
+                    break-before: page !important; 
+                }
             }
         `;
         document.head.appendChild(style);
@@ -323,8 +329,9 @@ window.alternarAba = function(aba) {
     const btnRec = document.getElementById('btn-tab-receitas');
     const btnDesp = document.getElementById('btn-tab-despesas');
     
-    const estiloBase = "flex: 1; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; text-align: center; border-radius: 8px;";
-    const estiloAtivo = estiloBase + " background: white; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1);";
+    // ATUALIZADO: Mantendo o display flex para alinhar o ícone com o texto
+    const estiloBase = "flex: 1; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;";
+    const estiloAtivo = estiloBase + " background: white; color: #0284c7; box-shadow: 0 2px 8px rgba(0,0,0,0.1);";
     const estiloInativo = estiloBase + " background: transparent; color: #64748b;";
 
     if (aba === 'receitas') {
@@ -673,7 +680,8 @@ function renderizarTabela() {
                 </div>
             </div>
 
-            <div style="margin: 30px 0 16px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+            <!-- Adicionada a classe 'quebra-pagina-impressao' para forçar a folha 2 -->
+            <div class="quebra-pagina-impressao" style="margin: 30px 0 16px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
                 <h4 style="margin: 0; color: #0f172a; font-size: 1.1rem;">Impostos e Transferências</h4>
             </div>
             ${gerarBlocoRelatorio('MUNICIPAL (Col. R: 1112, 1113, 1114)', recProc.municipal.total, recProc.municipal.itens, '#10b981', '#f0fdf4')}
@@ -799,7 +807,7 @@ function renderizarTabela() {
                             <!-- Percentuais -->
                             <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
                                 <td rowspan="2" style="padding: 10px; font-weight: bold; color: #475569; vertical-align: middle; text-align: center; border-right: 1px solid #e2e8f0; width: 140px; font-family: 'Inter', sans-serif;">PERCENTUAL</td>
-                                <td style="padding: 10px; text-align: left; border-right: 1px solid #e2e8f0; font-family: 'Inter', sans-serif; font-weight: 600; color: #334155;">
+                                <td style="padding: 10px; text-align: center; border-right: 1px solid #e2e8f0; font-family: 'Inter', sans-serif; font-weight: 600; color: #334155;">
                                     261.0000 <br><span style="font-size: 11px; color: #64748b; font-weight: 500;">(Mínimo 70%)</span>
                                 </td>
                                 <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo261.empenhado))}</td>
@@ -807,8 +815,8 @@ function renderizarTabela() {
                                 <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo261.pago))}</td>
                             </tr>
                             <tr style="background-color: #f8fafc; border-bottom: 1px solid #cbd5e1; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-                                <td style="padding: 10px; text-align: left; border-right: 1px solid #e2e8f0; font-family: 'Inter', sans-serif; font-weight: 600; color: #334155;">
-                                    262.0000 <span style="font-size: 11px; color: #64748b; font-weight: 500;">(Máximo 30%)</span>
+                                <td style="padding: 10px; text-align: center; border-right: 1px solid #e2e8f0; font-family: 'Inter', sans-serif; font-weight: 600; color: #334155;">
+                                    262.0000 <br><span style="font-size: 11px; color: #64748b; font-weight: 500;">(Máximo 30%)</span>
                                 </td>
                                 <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo262.empenhado))}</td>
                                 <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo262.liquidado))}</td>
@@ -920,10 +928,16 @@ document.getElementById('btn-processar').addEventListener('click', async () => {
         dashboard.style.cssText = "width: 100%; max-width: 1300px; margin: 0 auto; padding: 0; box-sizing: border-box;";
 
         document.getElementById('resultado-status').innerHTML = `
-            <!-- Segmented Control para Abas -->
-            <div style="background: #f1f5f9; padding: 6px; border-radius: 12px; display: flex; width: 100%; max-width: 400px; margin: 0 auto 32px auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
-                <button id="btn-tab-receitas" onclick="alternarAba('receitas')" style="flex: 1; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; text-align: center; border-radius: 8px; background: white; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">Receitas</button>
-                <button id="btn-tab-despesas" onclick="alternarAba('despesas')" style="flex: 1; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; text-align: center; border-radius: 8px; background: transparent; color: #64748b;">Despesas</button>
+            <!-- Segmented Control para Abas Modernizado -->
+            <div style="background: #e2e8f0; padding: 6px; border-radius: 14px; display: flex; width: 100%; max-width: 450px; margin: 0 auto 32px auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);">
+                <button id="btn-tab-receitas" onclick="alternarAba('receitas')" style="flex: 1; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; text-align: center; border-radius: 10px; background: white; color: #0284c7; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    Receitas
+                </button>
+                <button id="btn-tab-despesas" onclick="alternarAba('despesas')" style="flex: 1; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; text-align: center; border-radius: 10px; background: transparent; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                    Despesas
+                </button>
             </div>
 
             <!-- MODULO DE RECEITAS -->

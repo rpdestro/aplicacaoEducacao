@@ -215,19 +215,20 @@
         .detalhamento-container {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px; /* Ajustado para alinhar perfeitamente ao espaçamento da tabela superior */
             margin-top: 15px;
             margin-bottom: 30px;
         }
         
         .detalhamento-card {
             display: flex;
+            align-items: stretch; /* Garante que os containers tenham a altura total */
             background: #ffffff;
             border: 1px solid var(--border-color);
-            border-radius: 10px;
+            border-radius: 12px; /* Padronizado com o border-radius da tabela superior */
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-            transition: transform 0.2s;
+            box-shadow: 0 2px 4px -1px rgba(0,0,0,0.05); /* Sombra perfeitamente igual a de cima */
+            transition: transform 0.2s, box-shadow 0.2s;
         }
         
         .detalhamento-card:hover {
@@ -235,40 +236,48 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
 
+        /* 
+           ALINHAMENTO EXATO COM A TABELA DE DETALHAMENTO SUPERIOR
+           A largura do título, padding, e alinhamento do container 
+           de valores agora simulam o grid flex do JS nativo.
+        */
         .detalhamento-label {
-            width: 25%;
-            padding: 16px;
+            width: 180px; /* Mesma largura cravada da tabela superior */
+            flex-shrink: 0;
+            padding: 16px 20px; /* Mesmo espaçamento interno */
             display: flex;
             align-items: center;
             font-weight: 600;
-            font-size: 13px;
-            border-left: 5px solid; /* Cor injetada pelo tema */
+            font-size: 14px; /* Aumentado para 14px */
+            border-left: 4px solid; /* Espessura da borda colorida ajustada para 4px */
+            border-right: 1px solid var(--border-color); /* Separador igual ao da tabela superior */
         }
 
         .detalhamento-valores {
             display: flex;
-            width: 75%;
-            justify-content: space-around;
+            flex-grow: 1; /* Ocupa todo o espaço restante */
+            justify-content: flex-end; /* Alinha todo o bloco de números para a direita */
             align-items: center;
-            padding: 12px 16px;
+            padding: 12px 20px;
+            gap: 24px; /* Espaço exato (24px) entre as colunas de Empenhado, Liquidado e Pago */
         }
 
         .detalhamento-item {
             display: flex;
             flex-direction: column;
-            text-align: right;
-            min-width: 140px;
+            text-align: right; /* Alinha o texto das colunas individuais à direita */
+            width: 220px; /* Largura cravada igual a da tabela superior (220px) */
         }
 
         .detalhamento-item-titulo {
-            font-size: 11px;
+            font-size: 13px; /* Tamanho exato */
             color: var(--text-muted);
             margin-bottom: 4px;
         }
 
         .detalhamento-item-valor {
             font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 14px;
+            font-size: 15px; /* Tamanho exato da moeda */
             font-weight: 600;
             color: var(--text-main);
         }
@@ -289,9 +298,13 @@
 </head>
 <body>
 
-    <div class="page-header">
-        <h2>Departamento de Planejamento e Orçamento</h2>
-        <p>Selecione os arquivos CSV de Receitas e Despesas para iniciar as análises</p>
+    <div class="page-header" style="margin-bottom: 30px;">
+        <span style="display: inline-block; background: #e0f2fe; color: #0284c7; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.1);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 4px; margin-top: -2px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            Módulo SIOPS - V2.1
+        </span>
+        <h2 style="font-size: 2.2rem; color: #0f172a; margin: 0 0 8px 0; letter-spacing: -1px;">Departamento de Planejamento e Orçamento</h2>
+        <p style="font-size: 1.05rem; color: #64748b; margin: 0;">Análise consolidada de <strong style="color: #0f172a;">Receitas</strong> e <strong style="color: #0f172a;">Despesas</strong> para LDO</p>
     </div>
 
     <!-- SEÇÃO DE UPLOAD -->
