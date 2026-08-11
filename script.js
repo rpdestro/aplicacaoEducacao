@@ -256,10 +256,28 @@ window.imprimirRelatorio = function() {
                 .bloco-cabecalho { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                 canvas { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                 
-                /* NOVA REGRA: Força a quebra de página */
+                /* NOVA REGRA: Força a quebra de página (Usado em Receitas) */
                 .quebra-pagina-impressao { 
                     page-break-before: always !important; 
                     break-before: page !important; 
+                }
+
+                /* NOVA REGRA: Evita quebra do elemento no meio da página */
+                .evitar-quebra-impressao {
+                    page-break-inside: avoid !important;
+                    break-inside: avoid !important;
+                }
+
+                /* NOVA REGRA: Transforma o Select em texto simples na impressão */
+                .select-referencia {
+                    appearance: none !important;
+                    -webkit-appearance: none !important;
+                    -moz-appearance: none !important;
+                    background: transparent !important;
+                    border: none !important;
+                    color: #0f172a !important;
+                    font-weight: 700 !important;
+                    padding: 0 !important;
                 }
             }
         `;
@@ -620,8 +638,38 @@ function desenharGraficosDinamicos(recProc, despProc) {
 
 function renderizarTabela() {
     const dataAtual = new Date();
-    const textoReferencia = `${dataAtual.toLocaleString('pt-BR', { month: 'long' }).toUpperCase()}/${dataAtual.getFullYear()}`;
-    
+    const anoAtual = dataAtual.getFullYear();
+    const mesAtual = dataAtual.getMonth(); 
+    const nomesMeses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+
+    // Gera o menu Suspenso (Dropdown) sincronizado
+    const selectReferencia = `
+        <select class="select-referencia" onchange="document.querySelectorAll('.select-referencia').forEach(el => el.value = this.value)" style="background: transparent; border: none; font-weight: 700; color: #0f172a; font-family: 'Inter', sans-serif; font-size: 12px; cursor: pointer; outline: none; margin-left: -2px;">
+            <optgroup label="Mensal">
+                <option value="M">${nomesMeses[mesAtual]}/${anoAtual}</option>
+            </optgroup>
+            <optgroup label="Bimestral (RREO)">
+                <option value="B1">1º BIMESTRE / ${anoAtual}</option>
+                <option value="B2">2º BIMESTRE / ${anoAtual}</option>
+                <option value="B3">3º BIMESTRE / ${anoAtual}</option>
+                <option value="B4">4º BIMESTRE / ${anoAtual}</option>
+                <option value="B5">5º BIMESTRE / ${anoAtual}</option>
+                <option value="B6">6º BIMESTRE / ${anoAtual}</option>
+            </optgroup>
+            <optgroup label="Trimestral">
+                <option value="T1">1º TRIMESTRE / ${anoAtual}</option>
+                <option value="T2">2º TRIMESTRE / ${anoAtual}</option>
+                <option value="T3">3º TRIMESTRE / ${anoAtual}</option>
+                <option value="T4">4º TRIMESTRE / ${anoAtual}</option>
+            </optgroup>
+            <optgroup label="Quadrimestral (RGF)">
+                <option value="Q1">1º QUADRIMESTRE / ${anoAtual}</option>
+                <option value="Q2">2º QUADRIMESTRE / ${anoAtual}</option>
+                <option value="Q3">3º QUADRIMESTRE / ${anoAtual}</option>
+            </optgroup>
+        </select>
+    `;
+
     // CABEÇALHO OFICIAL MODERNIZADO COM LOGO
     const cabecalhoOficial = `
         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px 20px; margin-bottom: 32px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.03); text-align: center; position: relative; overflow: hidden;">
@@ -635,11 +683,11 @@ function renderizarTabela() {
 
             <h2 style="margin: 0 0 4px 0; font-size: 1.15rem; color: #0f172a; font-weight: 700; letter-spacing: -0.5px;">PREFEITURA MUNICIPAL DE BOTUCATU</h2>
             <h3 style="margin: 0 0 6px 0; font-size: 0.95rem; color: #475569; font-weight: 600;">SECRETARIA MUNICIPAL DA FAZENDA</h3>
-            <p style="margin: 0 0 24px 0; font-size: 0.85rem; color: #64748b;">Departamento de Planejamento e Orçamento (LDO/SIOPS)</p>
+            <p style="margin: 0 0 24px 0; font-size: 0.85rem; color: #64748b;">Departamento de Planejamento e Orçamento</p>
             
             <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
                 <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 500; color: #475569;">
-                    Referência: <strong style="color: #0f172a;">${textoReferencia}</strong>
+                    Referência: ${selectReferencia}
                 </div>
                 <div style="background: #f0fdf4; border: 1px solid #a7f3d0; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; color: #047857;">
                     Manutenção e Desenvolvimento do Ensino (Art. 212 - CF)
@@ -763,12 +811,23 @@ function renderizarTabela() {
     const calcPct = (v) => valorTotalFundeb > 0 ? ((v / valorTotalFundeb) * 100) : 0;
     const fmtPct = (p) => p.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '%';
 
+    // ==========================================================================
+    /* PREPARAÇÃO DA TABELA ETI PARA INJEÇÃO LOGO ABAIXO DO FUNDEB */
+    // ==========================================================================
+    let htmlDaTabelaETI = '';
+    try {
+        const resultadosETI = processarTabelaETI(despesasFiltradas); 
+        htmlDaTabelaETI = gerarHTMLTabelaETI(resultadosETI); 
+    } catch (erroEti) {
+        console.warn("Aviso: Falha ao carregar a tabela ETI isolada.", erroEti);
+    }
+
     const containerBlocosDesp = document.getElementById('container-blocos-despesas');
     if (containerBlocosDesp) {
         containerBlocosDesp.innerHTML = cabecalhoOficial + `
             
-            <!-- NOVA MATRIZ FUNDEB 261/262 (Estilo Tabela Excel) -->
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+            <!-- NOVA MATRIZ FUNDEB 261/262 (Com a classe 'evitar-quebra-impressao') -->
+            <div class="evitar-quebra-impressao" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
                 <div style="background-color: #f8fafc; padding: 16px 20px; border-bottom: 1px solid #e2e8f0;">
                     <h3 style="margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 700;">Acompanhamento do FUNDEB (Vínculos 261.0000 e 262.0000)</h3>
                 </div>
@@ -833,8 +892,11 @@ function renderizarTabela() {
                 </div>
             </div>
 
-            <!-- CARD DO GRÁFICO DE DESPESAS -->
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.03); display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-around;">
+            <!-- INJEÇÃO DA TABELA ETI AQUI -->
+            ${htmlDaTabelaETI}
+
+            <!-- CARD DO GRÁFICO DE DESPESAS (Com a classe 'evitar-quebra-impressao') -->
+            <div class="evitar-quebra-impressao" style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.03); display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-around;">
                 <div style="width: 100%; max-width: 450px; height: 250px;">
                     <canvas id="chartDespesas"></canvas>
                 </div>
@@ -844,7 +906,8 @@ function renderizarTabela() {
                 </div>
             </div>
 
-            <div style="background: #ffffff; border: 1px solid #e2e8f0; color: #0f172a; padding: 24px; border-radius: 16px; margin-bottom: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+            <!-- RESUMO DA APLICACAO OBRIGATORIA (Com a classe 'evitar-quebra-impressao') -->
+            <div class="evitar-quebra-impressao" style="background: #ffffff; border: 1px solid #e2e8f0; color: #0f172a; padding: 24px; border-radius: 16px; margin-bottom: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
     <h3 style="margin: 0 0 20px 0; font-size: 15px; text-transform: uppercase; text-align: center; color: #475569; letter-spacing: 1px; font-weight: 700;">Resumo da Aplicação Obrigatória (25%)</h3>
     <div style="display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
         
@@ -880,19 +943,7 @@ function renderizarTabela() {
             ${gerarBlocoRelatorioDespesas('12.365 - Educ. Infantil', despProc.info12365, '#8b5cf6', '#f5f3ff')}
             ${gerarBlocoRelatorioDespesas('12.367 - Educ. Especial', despProc.info12367, '#14b8a6', '#f0fdfa')}
         `;
-        // ==========================================================================
-        /* INJEÇÃO SEGURA E DINÂMICA (TABELA ETI) */
-        // ==========================================================================
-        try {
-            // Utilizando 'despesasFiltradas' para que os valores dos cards respondam aos filtros
-            const resultadosETI = processarTabelaETI(despesasFiltradas); 
-            const htmlDaTabelaETI = gerarHTMLTabelaETI(resultadosETI); 
-            containerBlocosDesp.insertAdjacentHTML('beforeend', htmlDaTabelaETI);
-        } catch (erroEti) {
-            console.warn("Aviso: Falha ao carregar a tabela ETI isolada.", erroEti);
-        }
-        
-    } // Fechamento do if (containerBlocosDesp) existente no seu código
+    }
 
     desenharGraficosDinamicos(recProc, despProc);
 }
@@ -1036,12 +1087,13 @@ function gerarHTMLTabelaETI(resultadosETI) {
         return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     };
 
+    // Adicionada classe 'evitar-quebra-impressao' ao bloco principal da Tabela ETI
     let html = `
-    <div style="margin-top: 30px;">
+    <div class="evitar-quebra-impressao" style="margin-bottom: 32px;"> 
         <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 12px; text-transform: uppercase;">
             FUNDEB - FOMENTO A MATRÍCULAS ETI (EDUCAÇÃO TEMPO INTEGRAL)
         </h3>
-        <div class="detalhamento-container">
+        <div class="detalhamento-container" style="margin-bottom: 0;">
     `;
 
     // ==========================================================================
