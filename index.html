@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Renato Pinheiro Destro">
     <title>Manutenção e Desenvolvimento do Ensino</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <!-- Biblioteca de Gráficos fixada no cabeçalho -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -14,7 +14,7 @@
     <div class="page-header">
         <span class="version-badge">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            Módulo SIOPE - V5.0-PDF
+            Módulo SIOPE - V2.3
         </span>
         <h2 class="page-title">Departamento de Planejamento e Orçamento</h2>
         <p class="page-subtitle">Análise consolidada de <strong>Receitas</strong> e <strong>Despesas</strong></p>
@@ -164,7 +164,7 @@
 
                 <div class="bloco-relatorio theme-green-light">
                     <div class="bloco-cabecalho">
-                        <span class="bloco-title">MUNICIPAL (Col. R: 1112, 1113, 1114)</span>
+                        <span class="bloco-title">MUNICIPAL <span class="no-print">(Col. R: 1112, 1113, 1114)</span></span>
                         <span id="rec-mun-val" class="bloco-value">R$ 0,00</span>
                     </div>
                     <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-mun-tbd"></tbody></table></div>
@@ -172,7 +172,7 @@
 
                 <div class="bloco-relatorio theme-emerald">
                     <div class="bloco-cabecalho">
-                        <span class="bloco-title">UNIÃO - FPM (Col. R: 1711)</span>
+                        <span class="bloco-title">UNIÃO - FPM <span class="no-print">(Col. R: 1711)</span></span>
                         <span id="rec-uni-val" class="bloco-value">R$ 0,00</span>
                     </div>
                     <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-uni-tbd"></tbody></table></div>
@@ -180,7 +180,7 @@
 
                 <div class="bloco-relatorio theme-teal-light">
                     <div class="bloco-cabecalho">
-                        <span class="bloco-title">ESTADO (Col. R: 1721.50, .51, .52)</span>
+                        <span class="bloco-title">ESTADO <span class="no-print">(Col. R: 1721.50, .51, .52)</span></span>
                         <span id="rec-est-val" class="bloco-value">R$ 0,00</span>
                     </div>
                     <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-est-tbd"></tbody></table></div>
@@ -193,7 +193,7 @@
 
                 <div class="bloco-relatorio theme-blue-light">
                     <div class="bloco-cabecalho">
-                        <span class="bloco-title">APLICAÇÃO OBRIGATÓRIA (25%)</span>
+                        <span class="bloco-title">APLICAÇÃO OBRIGATÓRIA <span class="no-print">(25%)</span></span>
                         <span id="rec-apl-obr-val" class="bloco-value">R$ 0,00</span>
                     </div>
                     <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-apl-obr-tbd"></tbody></table></div>
@@ -201,7 +201,7 @@
 
                 <div class="bloco-relatorio theme-amber">
                     <div class="bloco-cabecalho">
-                        <span class="bloco-title">DEDUÇÕES PARA FORMAÇÃO - FUNDEB (Col. R: 9510)</span>
+                        <span class="bloco-title">DEDUÇÕES PARA FORMAÇÃO - FUNDEB <span class="no-print">(Col. R: 9510)</span></span>
                         <span id="rec-ded-val" class="bloco-value">R$ 0,00</span>
                     </div>
                     <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-ded-tbd"></tbody></table></div>
@@ -218,7 +218,7 @@
                 
                 <div class="bloco-relatorio theme-sky">
                     <div class="bloco-cabecalho">
-                        <span class="bloco-title">FUNDEB PRINCIPAL (Col. R: 1751.50... / 1321.01...)</span>
+                        <span class="bloco-title">FUNDEB PRINCIPAL <span class="no-print">(Col. R: 1751.50... / 1321.01...)</span></span>
                         <span id="rec-fun-pri-val" class="bloco-value">R$ 0,00</span>
                     </div>
                     <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-fun-pri-tbd"></tbody></table></div>

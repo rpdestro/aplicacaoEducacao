@@ -191,6 +191,21 @@ const SIOPEApp = {
 
     // 5. MANIPULAÇÃO DA INTERFACE (UI)
     ui: {
+        initDataAtual() {
+            const dataAtual = new Date();
+            const anoAtual = dataAtual.getFullYear(); 
+            const mesAtual = dataAtual.getMonth(); 
+            const nomesMeses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+            
+            document.querySelectorAll('.opt-mensal').forEach(opt => {
+                opt.textContent = `${nomesMeses[mesAtual]}/${anoAtual}`;
+            });
+            
+            // Substitui todas as tags {ano} pelo ano real do computador
+            document.querySelectorAll('.opt-ano').forEach(opt => {
+                opt.textContent = opt.textContent.replace(/{ano}/g, anoAtual);
+            });
+        },
         setTxt(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; },
         setTbd(id, itens) {
             const el = document.getElementById(id); if(!el) return;
@@ -398,85 +413,52 @@ const SIOPEApp = {
             };
             if(typeof XLSX === 'undefined') { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload = func; document.head.appendChild(s); } else func();
         },
-        pdf(btn) {
-            const orig = btn.innerHTML; btn.innerHTML = "⏳ Gerando PDF..."; btn.disabled = true;
+        printReport(btn) {
+            const orig = btn ? btn.innerHTML : '';
+            if (btn) { btn.innerHTML = "⏳ Preparando..."; btn.disabled = true; }
             
-            const func = async () => {
-                const dash = document.getElementById('dashboard');
-                const modRec = document.getElementById('modulo-receitas');
-                const modDesp = document.getElementById('modulo-despesas');
-                
-                const recHidden = modRec.classList.contains('hidden');
-                const despHidden = modDesp.classList.contains('hidden');
-                
-                // 1. Esconde a UI de navegação
-                document.querySelector('.tabs-wrapper').style.display = 'none';
-                document.querySelectorAll('.controls-bar').forEach(c => c.style.display = 'none');
-                
-                // 2. Mostra os dois módulos ao mesmo tempo para a "foto"
-                modRec.classList.remove('hidden');
-                modDesp.classList.remove('hidden');
-                
-                // 3. Força a visão de relatórios (esconde a tabela de banco de dados para o PDF não ficar gigante)
-                SIOPEApp.ui.visao('rec', 'relatorio');
-                SIOPEApp.ui.visao('desp', 'relatorio');
-                
-                // Força uma quebra de página antes do módulo de despesas
-                modDesp.style.pageBreakBefore = 'always';
+            const modRec = document.getElementById('modulo-receitas');
+            const modDesp = document.getElementById('modulo-despesas');
+            const recHidden = modRec.classList.contains('hidden');
+            const despHidden = modDesp.classList.contains('hidden');
 
-                // Redimensiona gráficos para garantir que apareçam
-                if (SIOPEApp.state.chartRecInst) SIOPEApp.state.chartRecInst.resize();
-                if (SIOPEApp.state.chartDespInst) SIOPEApp.state.chartDespInst.resize();
+            // 1. Mostra ambas as telas em modo Relatório para a foto
+            SIOPEApp.ui.visao('rec', 'relatorio');
+            SIOPEApp.ui.visao('desp', 'relatorio');
+            modRec.classList.remove('hidden');
+            modDesp.classList.remove('hidden');
 
-                // Aguarda as animações do chart.js terminarem
-                await new Promise(r => setTimeout(r, 1000)); 
+            // 2. Força o redesenho dos gráficos para preencher o Canvas imediatamente e remove as animações
+            if (SIOPEApp.state.chartRecInst) {
+                SIOPEApp.state.chartRecInst.resize();
+                SIOPEApp.state.chartRecInst.update('none');
+            }
+            if (SIOPEApp.state.chartDespInst) {
+                SIOPEApp.state.chartDespInst.resize();
+                SIOPEApp.state.chartDespInst.update('none');
+            }
 
-                const opt = {
-                    margin:       10,
-                    filename:     'Relatorio_Consolidado_SIOPE.pdf',
-                    image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2, useCORS: true, logging: false },
-                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak:    { mode: ['css', 'legacy'], avoid: ['.evitar-quebra-impressao', '.bloco-relatorio', '.bloco-despesa-row', '.detalhamento-card', '.bar-total'] }
-                };
+            // 3. Aguarda o processamento de tela do navegador
+            setTimeout(() => {
+                if (btn) { btn.innerHTML = orig; btn.disabled = false; }
+                
+                // 4. Chama a impressora (PDF)
+                window.print(); 
 
-                try {
-                    await html2pdf().set(opt).from(dash).save();
-                } catch(e) {
-                    alert("Erro ao gerar PDF: " + e.message);
-                } finally {
-                    // Restaura a interface para o estado original
-                    document.querySelector('.tabs-wrapper').style.display = 'flex';
-                    document.querySelectorAll('.controls-bar').forEach(c => c.style.display = 'flex');
-                    modDesp.style.pageBreakBefore = '';
-                    
-                    if (recHidden) modRec.classList.add('hidden');
-                    if (despHidden) modDesp.classList.add('hidden');
-                    
-                    SIOPEApp.ui.abas(recHidden ? 'despesas' : 'receitas'); 
-                    
-                    btn.innerHTML = orig; 
-                    btn.disabled = false;
-                }
-            };
-
-            // Baixa a biblioteca apenas se o usuário clicar no botão
-            if(typeof html2pdf === 'undefined') {
-                const s = document.createElement('script');
-                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-                s.onload = func; document.head.appendChild(s);
-            } else { func(); }
+                // 5. Restaura o estado anterior
+                if (recHidden) modRec.classList.add('hidden');
+                if (despHidden) modDesp.classList.add('hidden');
+                SIOPEApp.ui.abas(recHidden ? 'despesas' : 'receitas'); 
+            }, 500);
         }
     },
 
     // 8. DELEGAÇÃO DE EVENTOS E INICIALIZAÇÃO
     events: {
         init() {
-            // Entradas de Arquivos
             document.getElementById('csv-receitas').addEventListener('change', e => SIOPEApp.ui.nomeArquivo('receitas', e.target));
             document.getElementById('csv-despesas').addEventListener('change', e => SIOPEApp.ui.nomeArquivo('despesas', e.target));
             
-            // Botão Mestre
             document.getElementById('btn-processar').addEventListener('click', async (e) => {
                 const btn = e.target.closest('button');
                 const fR = document.getElementById('csv-receitas').files[0], fD = document.getElementById('csv-despesas').files[0];
@@ -498,33 +480,25 @@ const SIOPEApp = {
                 } catch(err) { alert("Erro: " + err.message); } finally { btn.innerHTML = origTxt; btn.disabled = false; }
             });
 
-            // Abas
             document.getElementById('btn-tab-receitas').addEventListener('click', () => SIOPEApp.ui.abas('receitas'));
             document.getElementById('btn-tab-despesas').addEventListener('click', () => SIOPEApp.ui.abas('despesas'));
 
-            // Visões Receitas
             document.getElementById('btn-visao-relatorio-rec').addEventListener('click', () => SIOPEApp.ui.visao('rec', 'relatorio'));
             document.getElementById('btn-visao-tabela-rec').addEventListener('click', () => SIOPEApp.ui.visao('rec', 'tabela'));
-            
-            // Visões Despesas
             document.getElementById('btn-visao-relatorio-desp').addEventListener('click', () => SIOPEApp.ui.visao('desp', 'relatorio'));
             document.getElementById('btn-visao-tabela-desp').addEventListener('click', () => SIOPEApp.ui.visao('desp', 'tabela'));
 
-            // Ações Globais
-            document.querySelectorAll('.btn-print').forEach(b => b.addEventListener('click', () => window.print()));
-            document.querySelectorAll('.btn-pdf').forEach(b => b.addEventListener('click', function() { SIOPEApp.exports.pdf(this) }));
+            // Direciona todos os botões de PDF e Impressão para o nosso motor preparado
+            document.querySelectorAll('.btn-print, .btn-pdf').forEach(b => b.addEventListener('click', function() { SIOPEApp.exports.printReport(this) }));
             document.querySelector('.btn-excel-rec').addEventListener('click', function() { SIOPEApp.exports.excel('receitas', this) });
             document.querySelector('.btn-excel-desp').addEventListener('click', function() { SIOPEApp.exports.excel('despesas', this) });
             document.querySelectorAll('.btn-clear').forEach(b => b.addEventListener('click', SIOPEApp.filters.limparTodos));
             
-            // Carregar Mais
             document.getElementById('container_btn_mais_receitas').addEventListener('click', () => { SIOPEApp.state.limiteRec += 50; SIOPEApp.ui.renderizar(); });
             document.getElementById('container_btn_mais_despesas').addEventListener('click', () => { SIOPEApp.state.limiteDesp += 50; SIOPEApp.ui.renderizar(); });
 
-            // Menus Referência
             document.querySelectorAll('.select-referencia').forEach(s => s.addEventListener('change', e => document.querySelectorAll('.select-referencia').forEach(el => el.value = e.target.value)));
 
-            // Delegação de Eventos (Dropdowns Dinâmicos)
             document.addEventListener('click', e => {
                 const btn = e.target.closest('[data-action="toggle-drop"]');
                 if (btn) {
@@ -548,8 +522,10 @@ const SIOPEApp = {
         }
     },
 
-    // 9. INICIALIZADOR
-    init() { this.events.init(); }
+    init() { 
+        this.ui.initDataAtual(); // Acorda as datas primeiro
+        this.events.init(); 
+    }
 };
 
 document.addEventListener("DOMContentLoaded", () => SIOPEApp.init());

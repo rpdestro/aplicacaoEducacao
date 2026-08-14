@@ -111,7 +111,6 @@ body {
 .controls-actions { display: flex; gap: 8px; }
 .btn-action { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px;}
 
-/* Estilo novo botão PDF */
 .btn-pdf { background: #ef4444; color: white; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2); }
 .btn-pdf:hover { background: #dc2626; }
 
@@ -135,7 +134,7 @@ body {
 
 /* --- SEÇÃO DO GRÁFICO --- */
 .chart-section { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.03); display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-around; }
-.chart-canvas-wrapper { width: 100%; max-width: 450px; height: 250px; position: relative; } /* Correção Gráficos */
+.chart-canvas-wrapper { width: 100%; max-width: 450px; height: 250px; position: relative; } 
 .chart-info { flex: 1; min-width: 300px; padding: 0 15px; }
 .chart-info h4 { margin: 0 0 12px 0; color: #0f172a; font-size: 1.15rem; }
 .chart-info p { color: #64748b; font-size: 0.9rem; line-height: 1.6; margin: 0; }
@@ -158,7 +157,7 @@ body {
 .theme-amber .bloco-cabecalho { background-color: #fffbeb; border-left: 4px solid #f59e0b; } .theme-amber .bloco-value { color: #f59e0b; }
 .theme-sky .bloco-cabecalho { background-color: #f0f9ff; border-left: 4px solid #0ea5e9; } .theme-sky .bloco-value { color: #0ea5e9; }
 
-/* Temas Despesas (Correção aplicada para o fundo dos detalhamentos laterais) */
+/* Temas Despesas */
 .theme-blue .bloco-cabecalho, .theme-blue .bloco-despesa-header { background-color: #eff6ff; border-left: 4px solid #3b82f6; } 
 .theme-blue .bloco-value, .theme-blue .val-pag { color: #3b82f6; }
 
@@ -292,19 +291,41 @@ body {
 .btn-carregar-mais:hover { background: #f8fafc; }
 
 /* ==========================================================================
-   ESTILOS DE IMPRESSÃO
+   ESTILOS DE IMPRESSÃO (PDF VETORIZADO E SEM CORTES)
    ========================================================================== */
 @media print {
-    body { background: white !important; padding: 0 !important;}
+    body { background: white !important; padding: 0 !important; margin: 0 !important; }
     body * { visibility: hidden; }
-    #modulo-receitas, #modulo-receitas *, #modulo-despesas, #modulo-despesas * { visibility: visible; }
-    #modulo-receitas, #modulo-despesas { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none !important; margin: 0 !important; padding: 0 !important; border: none !important; }
-    button, .btn-filtro-excel, .visao-controles { display: none !important; }
+    #dashboard, #dashboard * { visibility: visible; }
+    #dashboard { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none !important; padding: 0 !important; margin: 0 !important; background: white !important;}
+    
+    .tabs-wrapper, .controls-bar, .btn-carregar-mais { display: none !important; }
+    
+    /* Esta é a classe mágica que esconde os elementos indesejados no PDF */
+    .no-print { display: none !important; }
+
+    #modulo-receitas, #modulo-despesas { 
+        position: relative !important; display: block !important; 
+        box-shadow: none !important; border: none !important; 
+        padding: 0 !important; margin: 0 !important; 
+    }
+    
+    #modulo-despesas { page-break-before: always !important; break-before: page !important; margin-top: 40px !important; }
+
     .responsive-table, div[style*="overflow"] { overflow: visible !important; max-height: none !important; }
-    .bloco-relatorio, .bloco-despesa-row, .detalhamento-card { page-break-inside: avoid; margin-bottom: 20px !important; border: 1px solid #ccc !important; }
-    .bloco-cabecalho, .bloco-despesa-header { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    canvas { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    .quebra-pagina-impressao { page-break-before: always !important; break-before: page !important; }
-    .evitar-quebra-impressao { page-break-inside: avoid !important; break-inside: avoid !important; }
-    .select-referencia { appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important; background: transparent !important; border: none !important; color: #0f172a !important; font-weight: 700 !important; padding: 0 !important; }
+    
+    .section-separator, h2, h3, h4, .bloco-cabecalho {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+    }
+    
+    tr, .bloco-relatorio, .bloco-despesa-row, .detalhamento-card, .chart-section, .fundeb-matrix { 
+        page-break-inside: avoid !important; 
+        break-inside: avoid !important; 
+    }
+    
+    thead { display: table-header-group !important; }
+    
+    canvas { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; max-width: 100% !important; }
+    .select-referencia { appearance: none !important; -webkit-appearance: none !important; background: transparent !important; border: none !important; color: #0f172a !important; font-weight: 700 !important; padding: 0 !important; }
 }
