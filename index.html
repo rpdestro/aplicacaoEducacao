@@ -4,315 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manutenção e Desenvolvimento do Ensino</title>
-    
-    <!-- Sugestão: Importar uma fonte moderna como 'Inter' -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --bg-color: #f8fafc;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --card-bg: #ffffff;
-            --primary: #0284c7;
-            --primary-hover: #0369a1;
-            --success-light: #dcfce7;
-            --success: #16a34a;
-            --danger-light: #fee2e2;
-            --danger: #dc2626;
-            --border-color: #e2e8f0;
-            --dropzone-bg: #f8fafc;
-        }
-
-        body {
-            font-family: 'Inter', 'Segoe UI', sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 40px 20px;
-            color: var(--text-main);
-        }
-
-        .hidden { display: none !important; }
-
-        /* --- CABEÇALHO --- */
-        .page-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        .page-header h2 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--text-main);
-            margin: 0 0 8px 0;
-            letter-spacing: -0.5px;
-        }
-        .page-header p {
-            font-size: 1rem;
-            color: var(--text-muted);
-            margin: 0;
-        }
-
-        /* --- CARDS DE UPLOAD --- */
-        .upload-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
-            gap: 24px;
-            max-width: 1100px;
-            margin: 0 auto 32px auto;
-        }
-
-        .upload-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px; /* Bordas mais arredondadas (Moderno) */
-            padding: 28px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        .upload-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
-        /* Cabeçalho do Card */
-        .card-header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        
-        .icon-box {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-        .icon-box.receitas { background: var(--success-light); color: var(--success); }
-        .icon-box.despesas { background: var(--danger-light); color: var(--danger); }
-
-        .card-title-group h3 {
-            margin: 0 0 4px 0;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-        .card-title-group span {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        /* Área de Dropzone */
-        .dropzone {
-            border: 2px dashed #cbd5e1;
-            border-radius: 12px;
-            padding: 32px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: var(--dropzone-bg);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        .dropzone:hover {
-            background: #f1f5f9;
-            border-color: #94a3b8;
-        }
-        .upload-card.receitas-card:hover .dropzone:hover { border-color: var(--success); background: #f0fdf4; }
-        .upload-card.despesas-card:hover .dropzone:hover { border-color: var(--danger); background: #fef2f2; }
-
-        .dropzone svg { margin-bottom: 12px; stroke: #94a3b8; transition: stroke 0.2s ease; }
-        .dropzone:hover svg { stroke: var(--primary); }
-        
-        .dropzone-title {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text-main);
-            margin-bottom: 4px;
-        }
-        .dropzone-subtitle {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        /* Área de Mapeamento (Badges) */
-        .mapping-area {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            background: #f8fafc;
-            padding: 12px 16px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-        }
-        .mapping-label {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .mapping-badge {
-            background: #ffffff;
-            color: #475569;
-            padding: 4px 8px;
-            border-radius: 6px;
-            border: 1px solid #cbd5e1;
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 0.75rem;
-            font-weight: 600;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-        }
-
-        /* --- BOTÃO PRINCIPAL --- */
-        .btn-wrapper { text-align: center; margin-top: 10px; }
-        
-        .btn-primary {
-            padding: 14px 48px;
-            background: linear-gradient(135deg, var(--primary) 0%, #026ca3 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
-        }
-        .btn-primary:active { transform: translateY(0); }
-
-        /* Estilos legados necessários para as tabelas renderizadas pelo script.js */
-        .responsive-table th { background-color: #1e293b; color: white; padding: 12px 10px; font-size: 13px; text-align: left; font-weight: 600; }
-        .responsive-table td { padding: 10px; border-bottom: 1px solid var(--border-color); font-size: 13px; color: var(--text-main); background: white; }
-        .responsive-table tr:hover td { background-color: #f8fafc; }
-        .text-right { text-align: right !important; }
-        .btn-filtro-excel { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: white; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 4px; transition: background 0.2s; }
-        .btn-filtro-excel:hover { background: rgba(255, 255, 255, 0.3); }
-        .active-filter { background-color: #f59e0b !important; border-color: #d97706 !important; color: #ffffff !important; font-weight: bold; }
-    
-    /* --- ESTILOS PARA OS CARDS DE DETALHAMENTO (ETI) --- */
-        .detalhamento-container {
-            display: flex;
-            flex-direction: column;
-            gap: 16px; /* Ajustado para alinhar perfeitamente ao espaçamento da tabela superior */
-            margin-top: 15px;
-            margin-bottom: 30px;
-        }
-        
-        .detalhamento-card {
-            display: flex;
-            align-items: stretch; /* Garante que os containers tenham a altura total */
-            background: #ffffff;
-            border: 1px solid var(--border-color);
-            border-radius: 12px; /* Padronizado com o border-radius da tabela superior */
-            overflow: hidden;
-            box-shadow: 0 2px 4px -1px rgba(0,0,0,0.05); /* Sombra perfeitamente igual a de cima */
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        
-        .detalhamento-card:hover {
-            transform: scale(1.005);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-
-        /* 
-           ALINHAMENTO EXATO COM A TABELA DE DETALHAMENTO SUPERIOR
-           A largura do título, padding, e alinhamento do container 
-           de valores agora simulam o grid flex do JS nativo.
-        */
-        .detalhamento-label {
-            width: 180px; /* Mesma largura cravada da tabela superior */
-            flex-shrink: 0;
-            padding: 16px 20px; /* Mesmo espaçamento interno */
-            display: flex;
-            align-items: center;
-            font-weight: 600;
-            font-size: 14px; /* Aumentado para 14px */
-            border-left: 4px solid; /* Espessura da borda colorida ajustada para 4px */
-            border-right: 1px solid var(--border-color); /* Separador igual ao da tabela superior */
-        }
-
-        .detalhamento-valores {
-            display: flex;
-            flex-grow: 1; /* Ocupa todo o espaço restante */
-            justify-content: flex-end; /* Alinha todo o bloco de números para a direita */
-            align-items: center;
-            padding: 12px 20px;
-            gap: 24px; /* Espaço exato (24px) entre as colunas de Empenhado, Liquidado e Pago */
-        }
-
-        .detalhamento-item {
-            display: flex;
-            flex-direction: column;
-            text-align: right; /* Alinha o texto das colunas individuais à direita */
-            width: 220px; /* Largura cravada igual a da tabela superior (220px) */
-        }
-
-        .detalhamento-item-titulo {
-            font-size: 13px; /* Tamanho exato */
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }
-
-        .detalhamento-item-valor {
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 15px; /* Tamanho exato da moeda */
-            font-weight: 600;
-            color: var(--text-main);
-        }
-
-        /* Temas de Cores dos Cards */
-        .theme-blue .detalhamento-label { border-left-color: #3b82f6; background-color: #eff6ff; color: #1e3a8a; }
-        .theme-blue .valor-destaque { color: #3b82f6; }
-        
-        .theme-purple .detalhamento-label { border-left-color: #8b5cf6; background-color: #f5f3ff; color: #4c1d95; }
-        .theme-purple .valor-destaque { color: #8b5cf6; }
-        
-        .theme-green .detalhamento-label { border-left-color: #10b981; background-color: #ecfdf5; color: #065f46; }
-        .theme-green .valor-destaque { color: #10b981; }
-
-        .theme-total .detalhamento-label { border-left-color: #475569; background-color: #f8fafc; color: #0f172a; }
-        .theme-total .valor-destaque { color: #0f172a; }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <!-- Biblioteca de Gráficos fixada no cabeçalho -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-    <div class="page-header" style="margin-bottom: 30px;">
-        <span style="display: inline-block; background: #e0f2fe; color: #0284c7; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.1);">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 4px; margin-top: -2px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            Módulo SIOPE - V2.1.1
+    <div class="page-header">
+        <span class="version-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            Módulo SIOPE - V5.0-PDF
         </span>
-        <h2 style="font-size: 2.2rem; color: #0f172a; margin: 0 0 8px 0; letter-spacing: -1px;">Departamento de Planejamento e Orçamento</h2>
-        <p style="font-size: 1.05rem; color: #64748b; margin: 0;">Análise consolidada de <strong style="color: #0f172a;">Receitas</strong> e <strong style="color: #0f172a;">Despesas</strong></p>
+        <h2 class="page-title">Departamento de Planejamento e Orçamento</h2>
+        <p class="page-subtitle">Análise consolidada de <strong>Receitas</strong> e <strong>Despesas</strong></p>
     </div>
 
     <!-- SEÇÃO DE UPLOAD -->
     <div id="upload-section">
-        
         <div class="upload-grid">
-            
-            <!-- CARD RECEITAS -->
             <div class="upload-card receitas-card">
                 <div>
                     <div class="card-header">
@@ -324,27 +34,21 @@
                             <span>Nat.Despesa R • Descrição K • Valor AB</span>
                         </div>
                     </div>
-
                     <label for="csv-receitas" class="dropzone" id="drop-zone-receitas">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         <span class="dropzone-title" id="label-receitas">Arraste o CSV ou clique para selecionar</span>
                         <span class="dropzone-subtitle">CSV com até 80 colunas • separador ; ou ,</span>
-                        <input type="file" id="csv-receitas" accept=".csv" style="display: none;" onchange="atualizarNomeArquivo('receitas')">
+                        <input type="file" id="csv-receitas" accept=".csv" class="hidden">
                     </label>
                 </div>
-
                 <div class="mapping-area">
-                    <span class="mapping-label">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                        Mapeamento:
-                    </span>
+                    <span class="mapping-label">Mapeamento:</span>
                     <span class="mapping-badge">R=17</span>
                     <span class="mapping-badge">K=10</span>
                     <span class="mapping-badge">AB=27</span>
                 </div>
             </div>
 
-            <!-- CARD DESPESAS -->
             <div class="upload-card despesas-card">
                 <div>
                     <div class="card-header">
@@ -356,29 +60,22 @@
                             <span>BJ • BW • L • N • P</span>
                         </div>
                     </div>
-
                     <label for="csv-despesas" class="dropzone" id="drop-zone-despesas">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         <span class="dropzone-title" id="label-despesas">Arraste o CSV ou clique para selecionar</span>
                         <span class="dropzone-subtitle">CSV com até 80 colunas • separador ; ou ,</span>
-                        <input type="file" id="csv-despesas" accept=".csv" style="display: none;" onchange="atualizarNomeArquivo('despesas')">
+                        <input type="file" id="csv-despesas" accept=".csv" class="hidden">
                     </label>
                 </div>
-
                 <div class="mapping-area">
-                    <span class="mapping-label">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                        Mapeamento:
-                    </span>
+                    <span class="mapping-label">Mapeamento:</span>
                     <span class="mapping-badge">BJ=61</span>
                     <span class="mapping-badge">BW=74</span>
                     <span class="mapping-badge">L=11</span>
                 </div>
             </div>
-
         </div>
 
-        <!-- BOTÃO CARREGAR DADOS -->
         <div class="btn-wrapper">
             <button id="btn-processar" class="btn-primary">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
@@ -387,12 +84,406 @@
         </div>
     </div>
 
-    <!-- DASHBOARD DE RESULTADOS (INJETADO VIA JS) -->
-    <div id="dashboard" class="hidden">
-        <div id="resultado-status"></div>
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="dashboard-panel hidden">
+        
+        <div class="tabs-wrapper">
+            <button id="btn-tab-receitas" class="tab-btn active">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                Receitas
+            </button>
+            <button id="btn-tab-despesas" class="tab-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                Despesas
+            </button>
+        </div>
+
+        <!-- MÓDULO RECEITAS -->
+        <div id="modulo-receitas" class="dashboard-module">
+            <div class="controls-bar">
+                <div class="controls-group-bg">
+                    <button id="btn-visao-relatorio-rec" class="btn-view active">📊 Relatório Executivo</button>
+                    <button id="btn-visao-tabela-rec" class="btn-view">📋 Base de Dados</button>
+                </div>
+                <div class="controls-actions">
+                    <button class="btn-action btn-pdf">📄 Gerar PDF</button>
+                    <button class="btn-action btn-print">🖨️ Imprimir</button>
+                    <button class="btn-action btn-excel-rec">⬇️ Excel</button>
+                    <button class="btn-action btn-clear">Limpar Filtros</button>
+                </div>
+            </div>
+            
+            <div class="official-header">
+                <div class="official-header-top"></div>
+                <img src="./brasao.png" alt="Brasão" class="official-header-logo">
+                <h2 class="official-header-title">PREFEITURA MUNICIPAL DE BOTUCATU</h2>
+                <h3 class="official-header-sub">SECRETARIA MUNICIPAL DA FAZENDA</h3>
+                <p class="official-header-desc">Departamento de Planejamento e Orçamento</p>
+                <div class="badges-container">
+                    <div class="badge-ref">
+                        Referência: 
+                        <select class="select-referencia">
+                            <optgroup label="Mensal"><option value="M" class="opt-mensal">MES/ANO</option></optgroup>
+                            <optgroup label="Bimestral (RREO)">
+                                <option value="B1" class="opt-ano">1º BIMESTRE / {ano}</option>
+                                <option value="B2" class="opt-ano">2º BIMESTRE / {ano}</option>
+                                <option value="B3" class="opt-ano">3º BIMESTRE / {ano}</option>
+                                <option value="B4" class="opt-ano">4º BIMESTRE / {ano}</option>
+                                <option value="B5" class="opt-ano">5º BIMESTRE / {ano}</option>
+                                <option value="B6" class="opt-ano">6º BIMESTRE / {ano}</option>
+                            </optgroup>
+                            <optgroup label="Trimestral">
+                                <option value="T1" class="opt-ano">1º TRIMESTRE / {ano}</option>
+                                <option value="T2" class="opt-ano">2º TRIMESTRE / {ano}</option>
+                                <option value="T3" class="opt-ano">3º TRIMESTRE / {ano}</option>
+                                <option value="T4" class="opt-ano">4º TRIMESTRE / {ano}</option>
+                            </optgroup>
+                            <optgroup label="Quadrimestral (RGF)">
+                                <option value="Q1" class="opt-ano">1º QUADRIMESTRE / {ano}</option>
+                                <option value="Q2" class="opt-ano">2º QUADRIMESTRE / {ano}</option>
+                                <option value="Q3" class="opt-ano">3º QUADRIMESTRE / {ano}</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="badge-lei">Manutenção e Desenvolvimento do Ensino (Art. 212 - CF)</div>
+                </div>
+            </div>
+
+            <div id="container-blocos-receitas">
+                <div class="chart-section">
+                    <div class="chart-canvas-wrapper"><canvas id="chartReceitas"></canvas></div>
+                    <div class="chart-info">
+                        <h4 class="chart-info-title">Composição das Receitas de Ensino</h4>
+                        <p class="chart-info-desc">O gráfico ilustra a distribuição percentual das principais fontes de recursos destinados à educação neste período.</p>
+                    </div>
+                </div>
+
+                <div class="section-separator quebra-pagina-impressao">
+                    <h4>Impostos e Transferências</h4>
+                </div>
+
+                <div class="bloco-relatorio theme-green-light">
+                    <div class="bloco-cabecalho">
+                        <span class="bloco-title">MUNICIPAL (Col. R: 1112, 1113, 1114)</span>
+                        <span id="rec-mun-val" class="bloco-value">R$ 0,00</span>
+                    </div>
+                    <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-mun-tbd"></tbody></table></div>
+                </div>
+
+                <div class="bloco-relatorio theme-emerald">
+                    <div class="bloco-cabecalho">
+                        <span class="bloco-title">UNIÃO - FPM (Col. R: 1711)</span>
+                        <span id="rec-uni-val" class="bloco-value">R$ 0,00</span>
+                    </div>
+                    <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-uni-tbd"></tbody></table></div>
+                </div>
+
+                <div class="bloco-relatorio theme-teal-light">
+                    <div class="bloco-cabecalho">
+                        <span class="bloco-title">ESTADO (Col. R: 1721.50, .51, .52)</span>
+                        <span id="rec-est-val" class="bloco-value">R$ 0,00</span>
+                    </div>
+                    <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-est-tbd"></tbody></table></div>
+                </div>
+
+                <div class="bar-total bar-total-dark">
+                    <span class="bar-total-label">TOTAL DE IMPOSTOS E TRANSFERÊNCIAS</span>
+                    <span id="rec-tot-imp-val" class="bar-total-value">R$ 0,00</span>
+                </div>
+
+                <div class="bloco-relatorio theme-blue-light">
+                    <div class="bloco-cabecalho">
+                        <span class="bloco-title">APLICAÇÃO OBRIGATÓRIA (25%)</span>
+                        <span id="rec-apl-obr-val" class="bloco-value">R$ 0,00</span>
+                    </div>
+                    <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-apl-obr-tbd"></tbody></table></div>
+                </div>
+
+                <div class="bloco-relatorio theme-amber">
+                    <div class="bloco-cabecalho">
+                        <span class="bloco-title">DEDUÇÕES PARA FORMAÇÃO - FUNDEB (Col. R: 9510)</span>
+                        <span id="rec-ded-val" class="bloco-value">R$ 0,00</span>
+                    </div>
+                    <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-ded-tbd"></tbody></table></div>
+                </div>
+
+                <div class="bar-total bar-total-indigo">
+                    <span class="bar-total-label">APLICAÇÃO MÍNIMA OBRIGATÓRIA - RECURSOS PRÓPRIOS</span>
+                    <span id="rec-apl-min-val" class="bar-total-value">R$ 0,00</span>
+                </div>
+
+                <div class="section-separator">
+                    <h4>Fundeb e Receitas Adicionais</h4>
+                </div>
+                
+                <div class="bloco-relatorio theme-sky">
+                    <div class="bloco-cabecalho">
+                        <span class="bloco-title">FUNDEB PRINCIPAL (Col. R: 1751.50... / 1321.01...)</span>
+                        <span id="rec-fun-pri-val" class="bloco-value">R$ 0,00</span>
+                    </div>
+                    <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-fun-pri-tbd"></tbody></table></div>
+                </div>
+
+                <div class="bloco-relatorio theme-blue-light">
+                    <div class="bloco-cabecalho">
+                        <span class="bloco-title">TRANSFERÊNCIA RECURSOS FUNDEB DESTINADOS CRIAÇÃO MATRÍCULAS E.T</span>
+                        <span id="rec-fun-et-val" class="bloco-value">R$ 0,00</span>
+                    </div>
+                    <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-fun-et-tbd"></tbody></table></div>
+                </div>
+
+                <div class="bloco-relatorio theme-blue-light">
+                    <div class="bloco-cabecalho">
+                        <span class="bloco-title">RECEITA DA APLICAÇÃO FINANCEIRA</span>
+                        <span id="rec-apl-fin-val" class="bloco-value">R$ 0,00</span>
+                    </div>
+                    <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-apl-fin-tbd"></tbody></table></div>
+                </div>
+
+                <div class="bloco-relatorio theme-blue-light">
+                    <div class="bloco-cabecalho">
+                        <span class="bloco-title">TRANSFERÊNCIAS DO FNDE</span>
+                        <span id="rec-fnd-val" class="bloco-value">R$ 0,00</span>
+                    </div>
+                    <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-fnd-tbd"></tbody></table></div>
+                </div>
+
+                <div class="bloco-relatorio theme-blue-light">
+                    <div class="bloco-cabecalho">
+                        <span class="bloco-title">TRANSFERÊNCIAS DO ESTADO (Ensino)</span>
+                        <span id="rec-est-tra-val" class="bloco-value">R$ 0,00</span>
+                    </div>
+                    <div class="table-responsive"><table class="table-lancamentos"><tbody id="rec-est-tra-tbd"></tbody></table></div>
+                </div>
+
+                <div class="bar-total bar-total-blue">
+                    <span class="bar-total-label">RECEITAS ADICIONAIS PARA O FINANCIAMENTO DO ENSINO</span>
+                    <span id="rec-tot-adi-val" class="bar-total-value">R$ 0,00</span>
+                </div>
+            </div>
+            
+            <div id="container-tabela-receitas-wrapper" class="tabela-wrapper">
+                <div id="nova-tabela-receitas"></div>
+                <button id="container_btn_mais_receitas" class="btn-carregar-mais">Carregar mais 50 registros...</button>
+            </div>
+        </div>
+
+        <!-- MÓDULO DESPESAS -->
+        <div id="modulo-despesas" class="dashboard-module hidden">
+            <div class="controls-bar">
+                <div class="controls-group-bg">
+                    <button id="btn-visao-relatorio-desp" class="btn-view active">📊 Relatório Executivo</button>
+                    <button id="btn-visao-tabela-desp" class="btn-view">📋 Base de Dados</button>
+                </div>
+                <div class="controls-actions">
+                    <button class="btn-action btn-pdf">📄 Gerar PDF</button>
+                    <button class="btn-action btn-print">🖨️ Imprimir</button>
+                    <button class="btn-action btn-excel-desp">⬇️ Excel</button>
+                    <button class="btn-action btn-clear">Limpar Filtros</button>
+                </div>
+            </div>
+
+            <div class="official-header">
+                <div class="official-header-top"></div>
+                <img src="./brasao.png" alt="Brasão" class="official-header-logo">
+                <h2 class="official-header-title">PREFEITURA MUNICIPAL DE BOTUCATU</h2>
+                <h3 class="official-header-sub">SECRETARIA MUNICIPAL DA FAZENDA</h3>
+                <p class="official-header-desc">Departamento de Planejamento e Orçamento</p>
+                <div class="badges-container">
+                    <div class="badge-ref">
+                        Referência: 
+                        <select class="select-referencia">
+                            <optgroup label="Mensal"><option value="M" class="opt-mensal">MES/ANO</option></optgroup>
+                            <optgroup label="Bimestral (RREO)">
+                                <option value="B1" class="opt-ano">1º BIMESTRE / {ano}</option>
+                                <option value="B2" class="opt-ano">2º BIMESTRE / {ano}</option>
+                                <option value="B3" class="opt-ano">3º BIMESTRE / {ano}</option>
+                                <option value="B4" class="opt-ano">4º BIMESTRE / {ano}</option>
+                                <option value="B5" class="opt-ano">5º BIMESTRE / {ano}</option>
+                                <option value="B6" class="opt-ano">6º BIMESTRE / {ano}</option>
+                            </optgroup>
+                            <optgroup label="Trimestral">
+                                <option value="T1" class="opt-ano">1º TRIMESTRE / {ano}</option>
+                                <option value="T2" class="opt-ano">2º TRIMESTRE / {ano}</option>
+                                <option value="T3" class="opt-ano">3º TRIMESTRE / {ano}</option>
+                                <option value="T4" class="opt-ano">4º TRIMESTRE / {ano}</option>
+                            </optgroup>
+                            <optgroup label="Quadrimestral (RGF)">
+                                <option value="Q1" class="opt-ano">1º QUADRIMESTRE / {ano}</option>
+                                <option value="Q2" class="opt-ano">2º QUADRIMESTRE / {ano}</option>
+                                <option value="Q3" class="opt-ano">3º QUADRIMESTRE / {ano}</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="badge-lei">Manutenção e Desenvolvimento do Ensino (Art. 212 - CF)</div>
+                </div>
+            </div>
+
+            <div id="container-blocos-despesas">
+                <div class="fundeb-matrix evitar-quebra-impressao">
+                    <div class="fundeb-matrix-header">
+                        <h3>Acompanhamento do FUNDEB (Vínculos 261.0000 e 262.0000)</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="fundeb-table">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">VÍNCULO</th>
+                                    <th class="text-right">EMPENHADO</th>
+                                    <th class="text-right">LIQUIDADO</th>
+                                    <th class="text-right">PAGO</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="val-row">
+                                    <td colspan="2" class="text-center">02.261.0000</td>
+                                    <td id="f-261-emp">R$ 0,00</td>
+                                    <td id="f-261-liq">R$ 0,00</td>
+                                    <td id="f-261-pag">R$ 0,00</td>
+                                </tr>
+                                <tr class="val-row">
+                                    <td colspan="2" class="text-center">02.262.0000</td>
+                                    <td id="f-262-emp">R$ 0,00</td>
+                                    <td id="f-262-liq">R$ 0,00</td>
+                                    <td id="f-262-pag">R$ 0,00</td>
+                                </tr>
+                                <tr class="linha-total-fundeb">
+                                    <td colspan="2" class="text-center">TOTAL</td>
+                                    <td id="f-tot-emp">R$ 0,00</td>
+                                    <td id="f-tot-liq">R$ 0,00</td>
+                                    <td id="f-tot-pag">R$ 0,00</td>
+                                </tr>
+                                <tr class="pct-row">
+                                    <td rowspan="2" class="pct-label">PERCENTUAL</td>
+                                    <td class="pct-desc">261.0000 <br><span>(Mínimo 70%)</span></td>
+                                    <td id="fp-261-emp" class="pct-val">0,00%</td>
+                                    <td id="fp-261-liq" class="pct-val">0,00%</td>
+                                    <td id="fp-261-pag" class="pct-val">0,00%</td>
+                                </tr>
+                                <tr class="pct-row">
+                                    <td class="pct-desc">262.0000 <br><span>(Máximo 30%)</span></td>
+                                    <td id="fp-262-emp" class="pct-val">0,00%</td>
+                                    <td id="fp-262-liq" class="pct-val">0,00%</td>
+                                    <td id="fp-262-pag" class="pct-val">0,00%</td>
+                                </tr>
+                                <tr class="linha-total-fundeb">
+                                    <td colspan="2" class="text-center">TOTAL</td>
+                                    <td id="fp-tot-emp">0,00%</td>
+                                    <td id="fp-tot-liq">0,00%</td>
+                                    <td id="fp-tot-pag">0,00%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="evitar-quebra-impressao" style="margin-bottom: 32px;"> 
+                    <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 12px; text-transform: uppercase;">
+                        FUNDEB - FOMENTO A MATRÍCULAS ETI (EDUCAÇÃO TEMPO INTEGRAL)
+                    </h3>
+                    <div class="detalhamento-container" style="margin-bottom: 0;">
+                        <div class="detalhamento-card theme-blue">
+                            <div class="detalhamento-label">05.261.0004</div>
+                            <div class="detalhamento-valores">
+                                <div class="detalhamento-item"><span class="detalhamento-item-titulo">Empenhado:</span><span id="eti-261-emp" class="detalhamento-item-valor">R$ 0,00</span></div>
+                                <div class="detalhamento-item"><span class="detalhamento-item-titulo">Liquidado:</span><span id="eti-261-liq" class="detalhamento-item-valor">R$ 0,00</span></div>
+                                <div class="detalhamento-item"><span class="detalhamento-item-titulo">Pago:</span><span id="eti-261-pag" class="detalhamento-item-valor valor-destaque">R$ 0,00</span></div>
+                            </div>
+                        </div>
+                        <div class="detalhamento-card theme-purple">
+                            <div class="detalhamento-label">05.262.0004</div>
+                            <div class="detalhamento-valores">
+                                <div class="detalhamento-item"><span class="detalhamento-item-titulo">Empenhado:</span><span id="eti-262-emp" class="detalhamento-item-valor">R$ 0,00</span></div>
+                                <div class="detalhamento-item"><span class="detalhamento-item-titulo">Liquidado:</span><span id="eti-262-liq" class="detalhamento-item-valor">R$ 0,00</span></div>
+                                <div class="detalhamento-item"><span class="detalhamento-item-titulo">Pago:</span><span id="eti-262-pag" class="detalhamento-item-valor valor-destaque">R$ 0,00</span></div>
+                            </div>
+                        </div>
+                        <div class="detalhamento-card theme-total">
+                            <div class="detalhamento-label" style="text-transform: uppercase;">TOTAL</div>
+                            <div class="detalhamento-valores">
+                                <div class="detalhamento-item"><span class="detalhamento-item-titulo">Empenhado:</span><span id="eti-tot-emp" class="detalhamento-item-valor">R$ 0,00</span></div>
+                                <div class="detalhamento-item"><span class="detalhamento-item-titulo">Liquidado:</span><span id="eti-tot-liq" class="detalhamento-item-valor">R$ 0,00</span></div>
+                                <div class="detalhamento-item"><span class="detalhamento-item-titulo">Pago:</span><span id="eti-tot-pag" class="detalhamento-item-valor valor-destaque">R$ 0,00</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-section evitar-quebra-impressao">
+                    <div class="chart-canvas-wrapper"><canvas id="chartDespesas"></canvas></div>
+                    <div class="chart-info">
+                        <h4 class="chart-info-title">Distribuição das Despesas (Valores Liquidados)</h4>
+                        <p class="chart-info-desc">Análise da alocação de recursos por subfunção educacional na Fonte 1.</p>
+                    </div>
+                </div>
+
+                <div class="resumo-card-container evitar-quebra-impressao">
+                    <h3>Resumo da Aplicação Obrigatória (25%)</h3>
+                    <div class="resumo-grid">
+                        <div class="resumo-item">
+                            <div class="resumo-item-title">Empenhado</div>
+                            <div id="res-emp-val" class="resumo-item-val">R$ 0,00</div>
+                            <div id="res-emp-pct" class="resumo-item-pct pct-blue">0,00%</div>
+                        </div>
+                        <div class="resumo-item">
+                            <div class="resumo-item-title">Liquidado</div>
+                            <div id="res-liq-val" class="resumo-item-val">R$ 0,00</div>
+                            <div id="res-liq-pct" class="resumo-item-pct pct-green-dark">0,00%</div>
+                        </div>
+                        <div class="resumo-item">
+                            <div class="resumo-item-title">Pago</div>
+                            <div id="res-pag-val" class="resumo-item-val">R$ 0,00</div>
+                            <div id="res-pag-pct" class="resumo-item-pct pct-green">0,00%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-separator">
+                    <h4>Detalhamento por Função/Subfunção (Fonte 1)</h4>
+                </div>
+
+                <div class="bloco-despesa-row theme-blue">
+                    <div class="bloco-despesa-header">12.122 - Admin. Geral</div>
+                    <div class="bloco-despesa-body">
+                        <div class="bloco-despesa-item">Empenhado: <br><strong id="d-12122-emp" class="val-emp">R$ 0,00</strong></div>
+                        <div class="bloco-despesa-item">Liquidado: <br><strong id="d-12122-liq" class="val-liq">R$ 0,00</strong></div>
+                        <div class="bloco-despesa-item">Pago: <br><strong id="d-12122-pag" class="bloco-value">R$ 0,00</strong></div>
+                    </div>
+                </div>
+                <div class="bloco-despesa-row theme-indigo">
+                    <div class="bloco-despesa-header">12.361 - Ensino Fund.</div>
+                    <div class="bloco-despesa-body">
+                        <div class="bloco-despesa-item">Empenhado: <br><strong id="d-12361-emp" class="val-emp">R$ 0,00</strong></div>
+                        <div class="bloco-despesa-item">Liquidado: <br><strong id="d-12361-liq" class="val-liq">R$ 0,00</strong></div>
+                        <div class="bloco-despesa-item">Pago: <br><strong id="d-12361-pag" class="bloco-value">R$ 0,00</strong></div>
+                    </div>
+                </div>
+                <div class="bloco-despesa-row theme-violet">
+                    <div class="bloco-despesa-header">12.365 - Educ. Infantil</div>
+                    <div class="bloco-despesa-body">
+                        <div class="bloco-despesa-item">Empenhado: <br><strong id="d-12365-emp" class="val-emp">R$ 0,00</strong></div>
+                        <div class="bloco-despesa-item">Liquidado: <br><strong id="d-12365-liq" class="val-liq">R$ 0,00</strong></div>
+                        <div class="bloco-despesa-item">Pago: <br><strong id="d-12365-pag" class="bloco-value">R$ 0,00</strong></div>
+                    </div>
+                </div>
+                <div class="bloco-despesa-row theme-teal-dark">
+                    <div class="bloco-despesa-header">12.367 - Educ. Especial</div>
+                    <div class="bloco-despesa-body">
+                        <div class="bloco-despesa-item">Empenhado: <br><strong id="d-12367-emp" class="val-emp">R$ 0,00</strong></div>
+                        <div class="bloco-despesa-item">Liquidado: <br><strong id="d-12367-liq" class="val-liq">R$ 0,00</strong></div>
+                        <div class="bloco-despesa-item">Pago: <br><strong id="d-12367-pag" class="bloco-value">R$ 0,00</strong></div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div id="container-tabela-despesas-wrapper" class="tabela-wrapper">
+                <div id="nova-tabela-despesas"></div>
+                <button id="container_btn_mais_despesas" class="btn-carregar-mais">Carregar mais 50 registros...</button>
+            </div>
+        </div>
     </div>
 
-    <!-- SCRIPT PRINCIPAL -->
     <script src="script.js"></script>
 </body>
 </html>

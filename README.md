@@ -1,2 +1,4 @@
 # aplicacaoEducacao
-Versão 2.2.1
+
+Versão 2.2
+

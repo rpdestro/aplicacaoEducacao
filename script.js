@@ -1,1189 +1,555 @@
-// ==========================================================================
-// VARIÁVEIS E ESTADOS GLOBAIS
-// ==========================================================================
-let dadosGlobaisReceitas = [];
-let dadosGlobaisDespesas = [];
-let filtrosAplicados = {};
+/**
+ * ============================================================================
+ * SIOPEApp - MOTOR PRINCIPAL DE PROCESSAMENTO (MODULE PATTERN)
+ * ============================================================================
+ */
+const SIOPEApp = {
+    // 1. ESTADO GLOBAL DA APLICAÇÃO (STATE)
+    state: {
+        receitas: [],
+        despesas: [],
+        filtros: {},
+        limiteRec: 50,
+        limiteDesp: 50,
+        chartRecInst: null,
+        chartDespInst: null,
+        fundebTotal: 1
+    },
 
-// Instâncias Globais dos Gráficos
-let chartRecInst = null;
-let chartDespInst = null;
-
-// Variáveis de paginação e FUNDEB
-let limiteReceitas = 50;
-let limiteDespesas = 50;
-let valorTotalFundeb = 1; 
-
-const mapaIdParaColuna = {
-    'rec_NatDespesa': 'Nat.Despesa',
-    'rec_Descricao': 'Descrição',
-    'rec_ValorReceita': 'Valor Receita',
-    'des_FuncaoSubFuncao': 'Função/SubFunção',
-    'des_Vinculo': 'Vínculo',
-    'des_Fonte': 'Fonte', 
-    'des_ValorEmpenhado': 'Valor Empenhado',
-    'des_ValorLiquidado': 'Valor Liquidado',
-    'des_ValorPago': 'Valor Pago'
-};
-
-// ==========================================================================
-/* FUNÇÕES DE SEGURANÇA E SANITIZAÇÃO */
-// ==========================================================================
-function sanitizarHTML(str) {
-    if (typeof str !== 'string') return str;
-    return str.replace(/[&<>'"]/g, function(tag) {
-        const charsToReplace = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' };
-        return charsToReplace[tag] || tag;
-    });
-}
-
-function sanitizarExportacaoExcel(valor) {
-    if (typeof valor === 'string' && /^[=+\-@]/.test(valor)) return "'" + valor; 
-    return valor;
-}
-
-// ==========================================================================
-/* LEITURA E PROCESSAMENTO DE ARQUIVOS*/
-// ==========================================================================
-function lerArquivo(arquivo) {
-    return new Promise((resolve, reject) => {
-        const leitor = new FileReader();
-        leitor.onload = (evento) => resolve(evento.target.result);
-        leitor.onerror = () => reject(new Error(`Falha ao ler o arquivo: ${arquivo.name}`));
-        leitor.readAsText(arquivo, 'UTF-8');
-    });
-}
-
-window.atualizarNomeArquivo = function(tipo) {
-    const input = document.getElementById(`csv-${tipo}`);
-    const label = document.getElementById(`label-${tipo}`);
-    const sublabel = document.getElementById(`sublabel-${tipo}`) || document.querySelector(`#drop-zone-${tipo} .dropzone-subtitle`);
-    const badge = document.getElementById(`badge-linhas-${tipo}`);
-
-    if (input.files && input.files[0]) {
-        const nomeArquivoSeguro = sanitizarHTML(input.files[0].name);
-        const corAtiva = tipo === 'receitas' ? '#10b981' : '#dc2626'; 
-        
-        label.textContent = nomeArquivoSeguro;
-        label.style.color = '#0f172a'; 
-        if (sublabel) sublabel.innerHTML = `<span style="color: ${corAtiva}; font-weight: bold;">✓</span> <span style="color: ${corAtiva}; font-weight: 500;">${nomeArquivoSeguro} anexado</span>`;
-        
-        if(badge) {
-            badge.classList.remove('hidden');
-            badge.textContent = 'Arquivo Pronto';
+    // 2. CONFIGURAÇÕES FIXAS
+    config: {
+        mapaColunas: {
+            'rec_NatDespesa': 'Nat.Despesa',
+            'rec_Descricao': 'Descrição',
+            'rec_ValorReceita': 'Valor Receita',
+            'des_FuncaoSubFuncao': 'Função/SubFunção',
+            'des_Vinculo': 'Vínculo',
+            'des_Fonte': 'Fonte', 
+            'des_ValorEmpenhado': 'Valor Empenhado',
+            'des_ValorLiquidado': 'Valor Liquidado',
+            'des_ValorPago': 'Valor Pago'
         }
-    }
-};
+    },
 
-function excelLetraParaIndice(letra) {
-    let clean = letra.toUpperCase().trim();
-    let indice = 0;
-    for (let i = 0; i < clean.length; i++) indice = indice * 26 + (clean.charCodeAt(i) - 64);
-    return indice - 1;
-}
-
-function converterCSVParaObjeto(textoBruto, dicionarioMapeamento) {
-    const linhas = textoBruto.split('\n').map(linha => linha.trim()).filter(linha => linha !== "");
-    if (linhas.length === 0) return [];
-
-    const primeiraLinha = linhas[0];
-    const separador = primeiraLinha.includes(';') ? ';' : ',';
-    const cabecalhosOriginais = primeiraLinha.split(separador).map(c => c.trim().replace(/^"|"$/g, ''));
-    const colunasLetras = Object.keys(dicionarioMapeamento);
-    const usaLetrasComoHeader = colunasLetras.every(letra => cabecalhosOriginais.some(c => c.toUpperCase() === letra.toUpperCase()));
-
-    return linhas.slice(1).map(linha => {
-        const valores = valoresSplitComAspas(linha, separador);
-        const objeto = {};
-        colunasLetras.forEach(letra => {
-            let idx = usaLetrasComoHeader ? cabecalhosOriginais.findIndex(c => c.toUpperCase() === letra.toUpperCase()) : excelLetraParaIndice(letra);
-            const valorCelula = valores[idx] || "";
-            objeto[dicionarioMapeamento[letra]] = sanitizarHTML(valorCelula);
-        });
-        return objeto;
-    });
-}
-
-function valoresSplitComAspas(linha, separador) {
-    const resultado = [];
-    let dentroDeAspas = false;
-    let valorAtual = "";
-    for (let i = 0; i < linha.length; i++) {
-        const char = linha[i];
-        if (char === '"') dentroDeAspas = !dentroDeAspas;
-        else if (char === separador && !dentroDeAspas) {
-            resultado.push(valorAtual.trim().replace(/^"|"$/g, ''));
-            valorAtual = "";
-        } else valorAtual += char;
-    }
-    resultado.push(valorAtual.trim().replace(/^"|"$/g, ''));
-    return resultado;
-}
-
-function limparEConverterNumero(valorString) {
-    if (!valorString) return 0;
-    let limpo = valorString.toString().trim().replace(/[R$\s]/g, '');
-    if (limpo.includes(',') && limpo.includes('.')) {
-        if (limpo.indexOf('.') < limpo.indexOf(',')) limpo = limpo.replace(/\./g, '');
-    } else if (limpo.includes(',') && !limpo.includes('.')) {
-        limpo = limpo.replace(',', '.');
-    }
-    limpo = limpo.replace(',', '.');
-    const numero = parseFloat(limpo);
-    return isNaN(numero) ? 0 : numero;
-}
-
-function formatarMoeda(valor) {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
-}
-
-// ==========================================================================
-/* CÁLCULOS E AGRUPAMENTOS CONTÁBEIS (COM NOVO FUNDEB) */
-// ==========================================================================
-function processarDadosReceitas(dados) {
-    let municipalItens = [], uniaoFPMItens = [], estadoItens = [], deducoesItens = [];
-    let fundebItens = [], fundebMatriculasETItens = [], aplicacaoFinanceiraItens = [];
-    let fndeItens = [], estadoTransferenciasItens = [];
-    let municipalTotal = 0, uniaoFPMTotal = 0, estadoTotal = 0, deducoesTotal = 0;
-    let fundebTotal = 0, fundebMatriculasETTotal = 0, aplicacaoFinanceiraTotal = 0;
-    let fndeTotal = 0, estadoTransferenciasTotal = 0;
-
-    const codigosAplicacao = ['1321.01.1.1.02.01', '1321.01.1.1.02.02', '1321.01.1.1.02.04', '1321.01.1.1.02.05', '1321.01.1.1.02.08', '1321.01.1.1.02.11'];
-    const codigosAplicacaoClean = codigosAplicacao.map(c => c.replace(/\./g, ''));
-    const codigosEstadoTransf = ['1724.51.0.1.02.00', '1724.51.0.1.03.00'];
-    const codigosEstadoTransfClean = codigosEstadoTransf.map(c => c.replace(/\./g, ''));
-
-    dados.forEach(item => {
-        const nat = String(item['Nat.Despesa'] || '').trim();
-        const natClean = nat.replace(/\./g, '');
-        const valor = limparEConverterNumero(item['Valor Receita']);
-
-        if (natClean.startsWith('1112') || natClean.startsWith('1113') || natClean.startsWith('1114')) { municipalItens.push(item); municipalTotal += valor; } 
-        else if (natClean.startsWith('1711')) { uniaoFPMItens.push(item); uniaoFPMTotal += valor; } 
-        else if (nat.startsWith('1721.50') || nat.startsWith('1721.51') || nat.startsWith('1721.52') || natClean.startsWith('172150') || natClean.startsWith('172151') || natClean.startsWith('172152')) { estadoItens.push(item); estadoTotal += valor; }
-
-        if (natClean.startsWith('9510')) { deducoesItens.push(item); deducoesTotal += valor; }
-        
-        if (nat.startsWith('1751.50') || natClean.startsWith('175150') || nat.includes('1321.01.1.1.02.06') || natClean.includes('132101110206')) { fundebItens.push(item); fundebTotal += valor; }
-        
-        if (nat.includes('1715.53.0.1.01.00') || natClean.includes('171553010100')) { fundebMatriculasETItens.push(item); fundebMatriculasETTotal += valor; }
-        
-        if (codigosAplicacao.includes(nat) || codigosAplicacaoClean.includes(natClean)) { aplicacaoFinanceiraItens.push(item); aplicacaoFinanceiraTotal += valor; }
-        if (nat.startsWith('1714') || natClean.startsWith('1714')) { fndeItens.push(item); fndeTotal += valor; }
-        if (codigosEstadoTransf.includes(nat) || codigosEstadoTransfClean.includes(natClean)) { estadoTransferenciasItens.push(item); estadoTransferenciasTotal += valor; }
-    });
-
-    valorTotalFundeb = fundebTotal > 0 ? fundebTotal : 1; 
-
-    const totalImpostosTransferencias = municipalTotal + uniaoFPMTotal + estadoTotal;
-    const aplicacaoObrigatoria25 = totalImpostosTransferencias * 0.25;
-    const absDeducoes = Math.abs(deducoesTotal);
-    const aplicacaoMinimaRecursosProprios = aplicacaoObrigatoria25 - absDeducoes;
-    const totalReceitasAdicionaisEnsino = aplicacaoFinanceiraTotal + fndeTotal + estadoTransferenciasTotal;
-
-    return {
-        municipal: { itens: municipalItens, total: municipalTotal },
-        uniaoFPM: { itens: uniaoFPMItens, total: uniaoFPMTotal },
-        estado: { itens: estadoItens, total: estadoTotal },
-        totalImpostosTransferencias, aplicacaoObrigatoria25,
-        deducoes: { itens: deducoesItens, total: deducoesTotal }, aplicacaoMinimaRecursosProprios,
-        fundeb: { itens: fundebItens, total: fundebTotal },
-        fundebMatriculasET: { itens: fundebMatriculasETItens, total: fundebMatriculasETTotal },
-        aplicacaoFinanceira: { itens: aplicacaoFinanceiraItens, total: aplicacaoFinanceiraTotal },
-        fnde: { itens: fndeItens, total: fndeTotal },
-        estadoTransferencias: { itens: estadoTransferenciasItens, total: estadoTransferenciasTotal },
-        totalReceitasAdicionaisEnsino
-    };
-}
-
-function processarDadosDespesas(dados) {
-    const vinculosPermitidos = ['200.012', '210.000', '220.000', '240.000'];
-    let info12122 = { empenhado: 0, liquidado: 0, pago: 0 };
-    let info12361 = { empenhado: 0, liquidado: 0, pago: 0 };
-    let info12365 = { empenhado: 0, liquidado: 0, pago: 0 };
-    let info12367 = { empenhado: 0, liquidado: 0, pago: 0 };
-    
-    let infoVinculo261 = { empenhado: 0, liquidado: 0, pago: 0 };
-    let infoVinculo262 = { empenhado: 0, liquidado: 0, pago: 0 };
-
-    dados.forEach(item => {
-        const funcSub = String(item['Função/SubFunção'] || '').trim();
-        const fonteOriginal = String(item['Fonte'] || '').trim();
-        const vinculo = String(item['Vínculo'] || '').trim();
-
-        const fonteLimpa = fonteOriginal.replace(/^0+/, ''); 
-        const isFonte1 = fonteLimpa === '1' || fonteLimpa.startsWith('1 ') || fonteLimpa.startsWith('1-');
-        const isVinculoValid = vinculosPermitidos.some(v => vinculo.includes(v));
-
-        const empenhado = limparEConverterNumero(item['Valor Empenhado']);
-        const liquidado = limparEConverterNumero(item['Valor Liquidado']);
-        const pago = limparEConverterNumero(item['Valor Pago']);
-
-        // Filtro por Fonte 1 para Detalhamento de Subfunção
-        if (isFonte1 && isVinculoValid) {
-            if (funcSub.includes('12.122') || funcSub.replace(/\./g, '').includes('12122')) { info12122.empenhado += empenhado; info12122.liquidado += liquidado; info12122.pago += pago; } 
-            else if (funcSub.includes('12.361') || funcSub.replace(/\./g, '').includes('12361')) { info12361.empenhado += empenhado; info12361.liquidado += liquidado; info12361.pago += pago; } 
-            else if (funcSub.includes('12.365') || funcSub.replace(/\./g, '').includes('12365')) { info12365.empenhado += empenhado; info12365.liquidado += liquidado; info12365.pago += pago; } 
-            else if (funcSub.includes('12.367') || funcSub.replace(/\./g, '').includes('12367')) { info12367.empenhado += empenhado; info12367.liquidado += liquidado; info12367.pago += pago; }
-        }
-
-        // ==========================================================================
-	/* CORREÇÃO APLICADA - DESPESA FUNDEB, BUSCANDO ESTRITAMENTE POR '261.000' e '262.000' */
-        // ==========================================================================
-	if (vinculo.includes('261.000')) { infoVinculo261.empenhado += empenhado; infoVinculo261.liquidado += liquidado; infoVinculo261.pago += pago; }
-        else if (vinculo.includes('262.000')) { infoVinculo262.empenhado += empenhado; infoVinculo262.liquidado += liquidado; infoVinculo262.pago += pago; }
-    });
-
-    return { info12122, info12361, info12365, info12367, infoVinculo261, infoVinculo262 };
-}
-
-// ==========================================================================
-/* AÇÕES DE EXPORTAÇÃO E IMPRESSÃO */
-// ==========================================================================
-window.imprimirRelatorio = function() {
-    if (!document.getElementById('estilo-impressao')) {
-        const style = document.createElement('style');
-        style.id = 'estilo-impressao';
-        style.innerHTML = `
-            @media print {
-                body { background: white !important; }
-                body * { visibility: hidden; }
-                #modulo-receitas, #modulo-receitas *, #modulo-despesas, #modulo-despesas * { visibility: visible; }
-                #modulo-receitas, #modulo-despesas { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none !important; margin: 0 !important; padding: 0 !important; border: none !important; }
-                button, .abas-navegacao, .btn-filtro-excel, .visao-controles { display: none !important; }
-                .responsive-table, div[style*="overflow"] { overflow: visible !important; max-height: none !important; }
-                .bloco-relatorio, .fundeb-card { page-break-inside: avoid; margin-bottom: 20px !important; border: 1px solid #ccc !important; }
-                .bloco-cabecalho { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                canvas { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                
-                /* NOVA REGRA: Força a quebra de página (Usado em Receitas) */
-                .quebra-pagina-impressao { 
-                    page-break-before: always !important; 
-                    break-before: page !important; 
-                }
-
-                /* NOVA REGRA: Evita quebra do elemento no meio da página */
-                .evitar-quebra-impressao {
-                    page-break-inside: avoid !important;
-                    break-inside: avoid !important;
-                }
-
-                /* NOVA REGRA: Transforma o Select em texto simples na impressão */
-                .select-referencia {
-                    appearance: none !important;
-                    -webkit-appearance: none !important;
-                    -moz-appearance: none !important;
-                    background: transparent !important;
-                    border: none !important;
-                    color: #0f172a !important;
-                    font-weight: 700 !important;
-                    padding: 0 !important;
-                }
+    // 3. UTILITÁRIOS E AJUDANTES (HELPERS)
+    utils: {
+        sanitizar(str) {
+            if (typeof str !== 'string') return str;
+            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+        },
+        sanitizarExcel(valor) {
+            return (typeof valor === 'string' && /^[=+\-@]/.test(valor)) ? "'" + valor : valor;
+        },
+        lerArquivo(arquivo) {
+            return new Promise((resolve, reject) => {
+                const leitor = new FileReader();
+                leitor.onload = e => resolve(e.target.result);
+                leitor.onerror = () => reject(new Error(`Falha ao ler: ${arquivo.name}`));
+                leitor.readAsText(arquivo, 'UTF-8');
+            });
+        },
+        letraParaIndice(letra) {
+            let idx = 0;
+            const clean = letra.toUpperCase().trim();
+            for (let i = 0; i < clean.length; i++) idx = idx * 26 + (clean.charCodeAt(i) - 64);
+            return idx - 1;
+        },
+        splitAspas(linha, separador) {
+            const res = []; let emAspas = false, val = "";
+            for (let i = 0; i < linha.length; i++) {
+                const c = linha[i];
+                if (c === '"') emAspas = !emAspas;
+                else if (c === separador && !emAspas) { res.push(val.trim().replace(/^"|"$/g, '')); val = ""; } 
+                else val += c;
             }
-        `;
-        document.head.appendChild(style);
-    }
-    window.print();
-};
+            res.push(val.trim().replace(/^"|"$/g, ''));
+            return res;
+        },
+        csvParaObj(texto, dicionario) {
+            const linhas = texto.split('\n').map(l => l.trim()).filter(l => l !== "");
+            if (!linhas.length) return [];
+            const sep = linhas[0].includes(';') ? ';' : ',';
+            const cabecalhos = linhas[0].split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
+            const chaves = Object.keys(dicionario);
+            const usaHeaders = chaves.every(l => cabecalhos.some(c => c.toUpperCase() === l.toUpperCase()));
 
-window.exportarReceitasXLSX = function(btn) { exportarExcel('receitas', btn); };
-window.exportarDespesasXLSX = function(btn) { exportarExcel('despesas', btn); };
-
-function exportarExcel(tipo, botaoAtivador) {
-    const dados = obterDadosFiltrados(tipo);
-    if (dados.length === 0) return alert('Não há dados para exportar com os filtros atuais.');
-    const textoOriginal = botaoAtivador.innerHTML;
-    botaoAtivador.innerHTML = "⏳ Gerando...";
-    botaoAtivador.disabled = true;
-
-    const gerar = () => {
-        const dadosExcel = tipo === 'receitas' 
-            ? dados.map(row => ({ 'Nat.Despesa': sanitizarExportacaoExcel(row['Nat.Despesa']), 'Descrição': sanitizarExportacaoExcel(row['Descrição']), 'Valor Receita': limparEConverterNumero(row['Valor Receita']) }))
-            : dados.map(row => ({ 'Função/SubFunção': sanitizarExportacaoExcel(row['Função/SubFunção']), 'Vínculo': sanitizarExportacaoExcel(row['Vínculo']), 'Fonte': sanitizarExportacaoExcel(row['Fonte']), 'Valor Empenhado': limparEConverterNumero(row['Valor Empenhado']), 'Valor Liquidado': limparEConverterNumero(row['Valor Liquidado']), 'Valor Pago': limparEConverterNumero(row['Valor Pago']) }));
-        
-        const ws = XLSX.utils.json_to_sheet(dadosExcel);
-        const wb = XLSX.utils.book_new();
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-            const colunasValores = tipo === 'receitas' ? [2] : [3, 4, 5];
-            colunasValores.forEach(C => {
-                const cell = ws[XLSX.utils.encode_cell({c: C, r: R})]; 
-                if (cell && cell.t === 'n') cell.z = '"R$"#,##0.00;"R$"-#,##0.00'; 
+            return linhas.slice(1).map(linha => {
+                const valores = this.splitAspas(linha, sep);
+                const obj = {};
+                chaves.forEach(k => {
+                    let idx = usaHeaders ? cabecalhos.findIndex(c => c.toUpperCase() === k.toUpperCase()) : this.letraParaIndice(k);
+                    obj[dicionario[k]] = this.sanitizar(valores[idx] || "");
+                });
+                return obj;
             });
+        },
+        limparNum(valor) {
+            if (!valor) return 0;
+            let limpo = valor.toString().trim().replace(/[R$\s]/g, '');
+            if (limpo.includes(',') && limpo.includes('.')) {
+                if (limpo.indexOf('.') < limpo.indexOf(',')) limpo = limpo.replace(/\./g, '');
+            } else if (limpo.includes(',') && !limpo.includes('.')) { limpo = limpo.replace(',', '.'); }
+            const n = parseFloat(limpo.replace(',', '.'));
+            return isNaN(n) ? 0 : n;
+        },
+        fmtMoeda(valor) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+        },
+        fmtPct(valor) {
+            return valor.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '%';
         }
-        XLSX.utils.book_append_sheet(wb, ws, tipo === 'receitas' ? "Receitas" : "Despesas");
-        XLSX.writeFile(wb, `${tipo}_filtradas.xlsx`);
-        botaoAtivador.innerHTML = textoOriginal;
-        botaoAtivador.disabled = false;
-    };
-    
-    if (typeof XLSX === 'undefined') {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-        script.onload = gerar;
-        script.onerror = () => { alert('Erro ao carregar biblioteca XLSX.'); botaoAtivador.innerHTML = textoOriginal; botaoAtivador.disabled = false; };
-        document.head.appendChild(script);
-    } else gerar();
-}
+    },
 
-window.limparTodosFiltros = function() {
-    filtrosAplicados = {};
-    document.querySelectorAll('.btn-filtro-excel').forEach(btn => {
-        btn.classList.remove('active-filter');
-        const txtBox = document.getElementById(`txt_${btn.id.replace('btn_drop_', '')}`);
-        if (txtBox) txtBox.innerText = "Todos";
-        sincronizarCheckboxesComEstado(btn.id.replace('btn_drop_', ''));
-    });
-    limiteReceitas = 50; limiteDespesas = 50;
-    renderizarTabela();
-};
-
-// ==========================================================================
-/* SISTEMA DE ABAS E VISÕES MODERNIZADO */
-// ==========================================================================
-window.alternarAba = function(aba) {
-    const moduloRec = document.getElementById('modulo-receitas');
-    const moduloDesp = document.getElementById('modulo-despesas');
-    const btnRec = document.getElementById('btn-tab-receitas');
-    const btnDesp = document.getElementById('btn-tab-despesas');
-    
-    // ATUALIZADO: Mantendo o display flex para alinhar o ícone com o texto
-    const estiloBase = "flex: 1; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;";
-    const estiloAtivo = estiloBase + " background: white; color: #0284c7; box-shadow: 0 2px 8px rgba(0,0,0,0.1);";
-    const estiloInativo = estiloBase + " background: transparent; color: #64748b;";
-
-    if (aba === 'receitas') {
-        if(moduloRec) moduloRec.style.setProperty('display', 'block', 'important');
-        if(moduloDesp) moduloDesp.style.setProperty('display', 'none', 'important');
-        if(btnRec) btnRec.style.cssText = estiloAtivo;
-        if(btnDesp) btnDesp.style.cssText = estiloInativo;
-    } else {
-        if(moduloRec) moduloRec.style.setProperty('display', 'none', 'important');
-        if(moduloDesp) moduloDesp.style.setProperty('display', 'block', 'important');
-        if(btnRec) btnRec.style.cssText = estiloInativo;
-        if(btnDesp) btnDesp.style.cssText = estiloAtivo;
-    }
-};
-
-window.alternarVisaoReceitas = function(visao) {
-    aplicarEstilosVisao(visao, document.getElementById('container-blocos-receitas'), document.getElementById('container-tabela-receitas-wrapper'), document.getElementById('btn-visao-relatorio-rec'), document.getElementById('btn-visao-tabela-rec'));
-};
-
-window.alternarVisaoDespesas = function(visao) {
-    aplicarEstilosVisao(visao, document.getElementById('container-blocos-despesas'), document.getElementById('container-tabela-despesas-wrapper'), document.getElementById('btn-visao-relatorio-desp'), document.getElementById('btn-visao-tabela-desp'));
-};
-
-function aplicarEstilosVisao(visao, blocos, tabela, btnRel, btnTab) {
-    const estAtivo = "padding: 8px 16px; background-color: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05);";
-    const estInativo = "padding: 8px 16px; background-color: transparent; color: #64748b; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s;";
-    if (visao === 'relatorio') {
-        if(blocos) blocos.style.display = 'block';
-        if(tabela) tabela.style.display = 'none';
-        if(btnRel) btnRel.style.cssText = estAtivo;
-        if(btnTab) btnTab.style.cssText = estInativo;
-    } else {
-        if(blocos) blocos.style.display = 'none';
-        if(tabela) tabela.style.display = 'block';
-        if(btnRel) btnRel.style.cssText = estInativo;
-        if(btnTab) btnTab.style.cssText = estAtivo;
-    }
-}
-
-// ==========================================================================
-/* LÓGICA DE FILTROS E TABELAS BASE */
-// ==========================================================================
-window.carregarMais = function(tipo) {
-    if (tipo === 'receitas') limiteReceitas += 50; else limiteDespesas += 50;
-    renderizarTabela();
-};
-
-function toggleSelectAll(campo, masterCheckbox) { document.querySelectorAll(`.ms-item-${campo}`).forEach(cb => { if(cb.closest('label').style.display !== 'none') cb.checked = masterCheckbox.checked; }); }
-function verificarSelectAll(campo) {
-    let todos = true;
-    document.querySelectorAll(`.ms-item-${campo}`).forEach(cb => { if(!cb.checked) todos = false; });
-    const master = document.querySelector(`.ms-select-all[data-campo="${campo}"]`);
-    if(master) master.checked = todos;
-}
-function filtrarDropdownPesquisa(campo, input) {
-    const termo = input.value.toLowerCase();
-    document.querySelectorAll(`#drop_${campo} .ms-item-label`).forEach(label => { label.style.display = label.textContent.toLowerCase().includes(termo) ? '' : 'none'; });
-}
-function atualizarTextoBotaoFiltro(campo) {
-    const cbs = document.querySelectorAll(`.ms-item-${campo}`);
-    const txt = document.getElementById(`txt_${campo}`);
-    const btn = document.getElementById(`btn_drop_${campo}`);
-    const vals = filtrosAplicados[campo];
-    if (vals === undefined || vals.length === cbs.length) { if(txt) txt.innerText = "Todos"; if(btn) btn.classList.remove('active-filter'); } 
-    else if (vals.length === 1) { if(txt) txt.innerText = vals[0]; if(btn) btn.classList.add('active-filter'); } 
-    else { if(txt) txt.innerText = vals.length + " sel."; if(btn) btn.classList.add('active-filter'); }
-}
-function aplicarFiltro(campo) {
-    const vals = [];
-    document.querySelectorAll(`.ms-item-${campo}`).forEach(cb => { if(cb.checked) vals.push(cb.value); });
-    if (vals.length === document.querySelectorAll(`.ms-item-${campo}`).length || vals.length === 0) delete filtrosAplicados[campo]; 
-    else filtrosAplicados[campo] = vals; 
-    limiteReceitas = 50; limiteDespesas = 50;
-    atualizarTextoBotaoFiltro(campo);
-    document.getElementById(`drop_${campo}`).classList.add('hidden');
-    renderizarTabela();
-}
-function obterDadosFiltrados(tipo) {
-    const buffer = tipo === 'receitas' ? dadosGlobaisReceitas : dadosGlobaisDespesas;
-    const prefix = tipo === 'receitas' ? 'rec_' : 'des_';
-    return buffer.filter(reg => {
-        for (let campo in filtrosAplicados) {
-            if (!campo.startsWith(prefix) || filtrosAplicados[campo] === undefined) continue;
-            const vals = filtrosAplicados[campo];
-            if (vals.length === 0) return false;
-            const linha = String(reg[mapaIdParaColuna[campo]] || '').trim().toLowerCase();
-            if (!vals.some(v => linha === v.trim().toLowerCase())) return false;
-        }
-        return true;
-    });
-}
-function fecharDropdownSemSalvar(campo) {
-    document.getElementById(`drop_${campo}`).classList.add('hidden');
-    document.querySelector(`#drop_${campo} .excel-search-input`).value = "";
-    document.querySelectorAll(`#drop_${campo} .ms-item-label`).forEach(l => l.style.display = '');
-    sincronizarCheckboxesComEstado(campo);
-}
-function sincronizarCheckboxesComEstado(campo) {
-    const vals = filtrosAplicados[campo];
-    const master = document.querySelector(`.ms-select-all[data-campo="${campo}"]`);
-    if (vals === undefined) {
-        document.querySelectorAll(`.ms-item-${campo}`).forEach(cb => cb.checked = false);
-        if (master) master.checked = false;
-    } else {
-        document.querySelectorAll(`.ms-item-${campo}`).forEach(cb => { cb.checked = vals.includes(cb.value); });
-        verificarSelectAll(campo);
-    }
-}
-
-document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.btn-filtro-excel');
-    if (btn) {
-        e.stopPropagation();
-        const campoId = btn.id.replace('btn_drop_', ''); 
-        const drop = btn.closest('th').querySelector('.excel-dropdown');
-        document.querySelectorAll('.excel-dropdown').forEach(d => { if (d !== drop) d.classList.add('hidden'); });
-        if (drop.classList.contains('hidden')) { sincronizarCheckboxesComEstado(campoId); drop.classList.remove('hidden'); } 
-        else drop.classList.add('hidden');
-        return;
-    }
-    if (!e.target.closest('th')) { document.querySelectorAll('.excel-dropdown').forEach(d => { if(!d.classList.contains('hidden')) fecharDropdownSemSalvar(d.id.replace('drop_', '')); }); }
-});
-
-function construirEstruturaTabelaBase(dados, containerId, tipo) {
-    const container = document.getElementById(containerId);
-    if(!container) return;
-    if (!dados || dados.length === 0) { container.innerHTML = `<p class="no-data">Nenhum registro encontrado.</p>`; return; }
-
-    const cabecalhos = Object.keys(dados[0]);
-    let html = `<div class="responsive-table" style="width: 100%; overflow: visible; border-radius: 12px; box-sizing: border-box; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-                <table class="tabela-moderna" style="width: 100%; border-collapse: collapse; box-sizing: border-box;">
-                <thead style="background-color: #f8fafc; color: #475569; border-bottom: 2px solid #cbd5e1;"><tr>`;
-
-    cabecalhos.forEach((cabecalho, index) => {
-        const campoId = Object.keys(mapaIdParaColuna).find(key => mapaIdParaColuna[key] === cabecalho);
-        const valoresUnicos = [...new Set(dados.map(item => String(item[cabecalho]).trim()))].sort();
-        const isValor = cabecalho.includes('Valor');
-        let widthStyle = tipo === 'receitas' ? (cabecalho === 'Descrição' ? '60%' : '20%') : (cabecalho === 'Vínculo' ? '25%' : (cabecalho === 'Fonte' ? '20%' : (cabecalho === 'Função/SubFunção' ? '15%' : '13.3%')));
-        const alinhamento = isValor ? 'justify-content: flex-end;' : 'justify-content: flex-start;';
-        const classeMenu = (index === cabecalhos.length - 1) ? 'excel-dropdown dropdown-last-child' : 'excel-dropdown';
-
-        html += `
-            <th data-col="${cabecalho}" style="position: relative; width: ${widthStyle}; padding: 12px 16px; font-weight: 600; font-size: 13px;">
-                <div class="th-container" style="display: flex; align-items: center; gap: 8px; ${alinhamento}">
-                    <span>${cabecalho}</span>
-                    <button id="btn_drop_${campoId}" class="btn-filtro-excel" style="background: white; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 6px; color: #475569; font-size: 11px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                         <span id="txt_${campoId}">Todos</span> 🔻
-                    </button>
-                </div>
-                <div id="drop_${campoId}" class="${classeMenu} hidden" style="position: absolute; top: 100%; left: 0; z-index: 99999; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); width: 280px; padding: 12px; text-align: left; font-weight: 400; margin-top: 4px; color: #334155;">
-                    <input type="text" class="excel-search-input" oninput="filtrarDropdownPesquisa('${campoId}', this)" placeholder="Pesquisar..." style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box; margin-bottom: 8px;">
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 4px 0; cursor: pointer; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 8px;">
-                        <input type="checkbox" class="ms-select-all" data-campo="${campoId}" onchange="toggleSelectAll('${campoId}', this)"> Selecionar Tudo
-                    </label>
-                    <div style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
-                        ${valoresUnicos.map(val => `<label class="ms-item-label" style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; cursor: pointer;"><input type="checkbox" class="chk-item ms-item-${campoId}" value="${val.replace(/"/g, '&quot;')}" onchange="verificarSelectAll('${campoId}')" style="margin-top: 2px;"> <span style="word-break: break-word;">${val || '(Vazio)'}</span></label>`).join('')}
-                    </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
-                        <button onclick="aplicarFiltro('${campoId}')" style="padding: 6px 12px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600;">OK</button>
-                        <button onclick="fecharDropdownSemSalvar('${campoId}')" style="padding: 6px 12px; background: #f1f5f9; color: #475569; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Cancelar</button>
-                    </div>
-                </div>
-            </th>`;
-    });
-
-    html += `</tr></thead><tbody id="tbody_rows_${tipo}"></tbody></table></div>`;
-    html += `<div id="container_btn_mais_${tipo}" style="text-align: center; margin-top: 24px; display: none;"><button onclick="carregarMais('${tipo}')" style="padding: 10px 24px; background: white; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;">Carregar mais 50 registros...</button></div>`;
-    container.innerHTML = html;
-}
-
-// ==========================================================================
-/* RENDERIZAÇÃO VISUAL DOS BLOCOS E GRÁFICOS */
-// ==========================================================================
-function carregarChartJS(callback) {
-    if (typeof Chart === 'undefined') {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
-        script.onload = callback;
-        script.onerror = () => console.error("Falha ao carregar o Chart.js");
-        document.head.appendChild(script);
-    } else {
-        callback();
-    }
-}
-
-function gerarBlocoRelatorio(titulo, total, itens, corDestaque = '#10b981', corFundoClaro = '#ecfdf5') {
-    const itensHTML = itens && itens.length > 0 ? itens.map(item => `
-        <tr style="border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
-            <td style="padding: 10px 16px; font-family: 'Consolas', monospace; font-size: 13px; color: #475569; width: 220px;">${item['Nat.Despesa'] || ''}</td>
-            <td style="padding: 10px 16px; font-size: 13px; color: #1e293b;">${item['Descrição'] || ''}</td>
-            <td style="padding: 10px 16px; text-align: right; font-family: 'Consolas', monospace; font-weight: 600; font-size: 13px; color: #0f172a; width: 160px; white-space: nowrap;">${formatarMoeda(limparEConverterNumero(item['Valor Receita']))}</td>
-        </tr>`).join('') : `<tr><td colspan="3" style="padding: 16px; text-align: center; color: #94a3b8; font-size: 13px; font-style: italic;">Nenhum lançamento encontrado para esta regra.</td></tr>`;
-    
-    return `
-        <div class="bloco-relatorio" style="margin-bottom: 24px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden;">
-            <div class="bloco-cabecalho" style="background-color: ${corFundoClaro}; border-left: 4px solid ${corDestaque}; border-bottom: 1px solid #e2e8f0; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-weight: 600; color: #0f172a; font-size: 14px; letter-spacing: -0.3px;">${titulo}</span>
-                <span style="font-weight: 700; color: ${corDestaque}; font-size: 16px; font-family: 'Consolas', monospace;">${formatarMoeda(total)}</span>
-            </div>
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse;"><tbody>${itensHTML}</tbody></table>
-            </div>
-        </div>`;
-}
-
-function gerarBlocoRelatorioDespesas(titulo, objDados, corDestaque = '#3b82f6', corFundoClaro = '#eff6ff') {
-    return `
-        <div class="bloco-relatorio" style="margin-bottom: 16px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 4px -1px rgba(0,0,0,0.05); display: flex; align-items: stretch; overflow: hidden;">
-            <div class="bloco-cabecalho" style="background-color: ${corFundoClaro}; border-left: 4px solid ${corDestaque}; color: #0f172a; padding: 16px 20px; font-weight: 600; font-size: 14px; display: flex; align-items: center; width: 180px; flex-shrink: 0; border-right: 1px solid #e2e8f0;">
-                ${titulo}
-            </div>
-            <div style="padding: 12px 20px; display: flex; justify-content: flex-end; align-items: center; gap: 24px; font-size: 14px; flex-grow: 1; background: white;">
-                <div style="color: #64748b; width: 220px; text-align: right; font-size: 13px;">Empenhado: <br><strong style="color: #1e293b; font-family: 'Consolas', monospace; font-size: 15px;">${formatarMoeda(objDados.empenhado)}</strong></div>
-                <div style="color: #64748b; width: 220px; text-align: right; font-size: 13px;">Liquidado: <br><strong style="color: #1e293b; font-family: 'Consolas', monospace; font-size: 15px;">${formatarMoeda(objDados.liquidado)}</strong></div>
-                <div style="color: #64748b; width: 220px; text-align: right; font-size: 13px;">Pago: <br><strong style="color: ${corDestaque}; font-family: 'Consolas', monospace; font-size: 15px;">${formatarMoeda(objDados.pago)}</strong></div>
-            </div>
-        </div>`;
-}
-
-
-// ==========================================================================
-/* GRÁFICO DE RECEITAS */
-// ==========================================================================
-function desenharGraficosDinamicos(recProc, despProc) {
-    carregarChartJS(() => {        
-        const ctxRec = document.getElementById('chartReceitas');
-        if (ctxRec) {
-            if (chartRecInst) chartRecInst.destroy();
-            chartRecInst = new Chart(ctxRec, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Municipal', 'União (FPM)', 'Estado', 'Fundeb Principal', 'Outras Adicionais'],
-                    datasets: [{
-                        data: [
-                            recProc.municipal.total,
-                            recProc.uniaoFPM.total,
-                            recProc.estado.total,
-                            recProc.fundeb.total,
-                            (recProc.aplicacaoFinanceira.total + recProc.fnde.total + recProc.estadoTransferencias.total + recProc.fundebMatriculasET.total)
-                        ],
-                        backgroundColor: ['#10b981', '#059669', '#34d399', '#0ea5e9', '#6366f1'],
-                        borderWidth: 0,
-                        hoverOffset: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'right', labels: { font: { family: 'Inter', size: 12 }, color: '#475569', usePointStyle: true, padding: 20 } },
-                        tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', padding: 12, callbacks: { label: function(context) { return ' ' + formatarMoeda(context.raw); } } }
-                    },
-                    cutout: '65%'
+    // 4. LÓGICA DE NEGÓCIO E CONTABILIDADE (CORE)
+    core: {
+        filtrar(tipo) {
+            const base = tipo === 'receitas' ? SIOPEApp.state.receitas : SIOPEApp.state.despesas;
+            const prefix = tipo === 'receitas' ? 'rec_' : 'des_';
+            return base.filter(reg => {
+                for (let c in SIOPEApp.state.filtros) {
+                    if (!c.startsWith(prefix) || !SIOPEApp.state.filtros[c]) continue;
+                    const vals = SIOPEApp.state.filtros[c];
+                    if (vals.length === 0) return false;
+                    const linha = String(reg[SIOPEApp.config.mapaColunas[c]] || '').trim().toLowerCase();
+                    if (!vals.some(v => linha === v.trim().toLowerCase())) return false;
                 }
+                return true;
             });
-        }
+        },
+        procReceitas(dados) {
+            let r = { mun: { i:[], t:0 }, uniao: { i:[], t:0 }, est: { i:[], t:0 }, ded: { i:[], t:0 },
+                      fun: { i:[], t:0 }, funET: { i:[], t:0 }, aplFin: { i:[], t:0 }, fnde: { i:[], t:0 }, estTra: { i:[], t:0 } };
+            
+            const codA = ['1321.01.1.1.02.01', '1321.01.1.1.02.02', '1321.01.1.1.02.04', '1321.01.1.1.02.05', '1321.01.1.1.02.08', '1321.01.1.1.02.11'];
+            const codAC = codA.map(c => c.replace(/\./g, ''));
+            const codE = ['1724.51.0.1.02.00', '1724.51.0.1.03.00'];
+            const codEC = codE.map(c => c.replace(/\./g, ''));
 
-        // ==========================================================================
-	/* GRÁFICO DE DESPESAS */
-        // ==========================================================================
-	const ctxDesp = document.getElementById('chartDespesas');
-        if (ctxDesp) {
-            if (chartDespInst) chartDespInst.destroy();
-            chartDespInst = new Chart(ctxDesp, {
-                type: 'bar',
-                data: {
-                    labels: ['12.122 (Admin)', '12.361 (Fundamental)', '12.365 (Infantil)', '12.367 (Especial)'],
-                    datasets: [{
-                        label: 'Liquidado (R$)',
-                        data: [despProc.info12122.liquidado, despProc.info12361.liquidado, despProc.info12365.liquidado, despProc.info12367.liquidado],
-                        backgroundColor: ['rgba(59, 130, 246, 0.7)', 'rgba(99, 102, 241, 0.7)', 'rgba(139, 92, 246, 0.7)', 'rgba(20, 184, 166, 0.7)'],
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
+            dados.forEach(item => {
+                const nat = String(item['Nat.Despesa'] || '').trim();
+                const nC = nat.replace(/\./g, '');
+                const val = SIOPEApp.utils.limparNum(item['Valor Receita']);
+
+                if (nC.startsWith('1112') || nC.startsWith('1113') || nC.startsWith('1114')) { r.mun.i.push(item); r.mun.t += val; } 
+                else if (nC.startsWith('1711')) { r.uniao.i.push(item); r.uniao.t += val; } 
+                else if (nat.startsWith('1721.50') || nat.startsWith('1721.51') || nat.startsWith('1721.52') || nC.startsWith('172150') || nC.startsWith('172151') || nC.startsWith('172152')) { r.est.i.push(item); r.est.t += val; }
+                if (nC.startsWith('9510')) { r.ded.i.push(item); r.ded.t += val; }
+                if (nat.startsWith('1751.50') || nC.startsWith('175150') || nat.includes('1321.01.1.1.02.06') || nC.includes('132101110206')) { r.fun.i.push(item); r.fun.t += val; }
+                if (nat.includes('1715.53.0.1.01.00') || nC.includes('171553010100')) { r.funET.i.push(item); r.funET.t += val; }
+                if (codA.includes(nat) || codAC.includes(nC)) { r.aplFin.i.push(item); r.aplFin.t += val; }
+                if (nat.startsWith('1714') || nC.startsWith('1714')) { r.fnde.i.push(item); r.fnde.t += val; }
+                if (codE.includes(nat) || codEC.includes(nC)) { r.estTra.i.push(item); r.estTra.t += val; }
+            });
+
+            SIOPEApp.state.fundebTotal = r.fun.t > 0 ? r.fun.t : 1; 
+            r.totImp = r.mun.t + r.uniao.t + r.est.t;
+            r.aplObr = r.totImp * 0.25;
+            r.aplMin = r.aplObr - Math.abs(r.ded.t);
+            r.totAdi = r.aplFin.t + r.fnde.t + r.estTra.t;
+            return r;
+        },
+        procDespesas(dados) {
+            let d = { i122: {e:0, l:0, p:0}, i361: {e:0, l:0, p:0}, i365: {e:0, l:0, p:0}, i367: {e:0, l:0, p:0}, v261: {e:0, l:0, p:0}, v262: {e:0, l:0, p:0} };
+            const vPerm = ['200.012', '210.000', '220.000', '240.000'];
+
+            dados.forEach(item => {
+                const f = String(item['Função/SubFunção'] || '').trim();
+                const fnt = String(item['Fonte'] || '').trim().replace(/^0+/, '');
+                const v = String(item['Vínculo'] || '').trim();
+                
+                const isF1 = fnt === '1' || fnt.startsWith('1 ') || fnt.startsWith('1-');
+                const isV = vPerm.some(vp => v.includes(vp));
+                const e = SIOPEApp.utils.limparNum(item['Valor Empenhado']);
+                const l = SIOPEApp.utils.limparNum(item['Valor Liquidado']);
+                const p = SIOPEApp.utils.limparNum(item['Valor Pago']);
+
+                if (isF1 && isV) {
+                    if (f.includes('12.122') || f.replace(/\./g, '').includes('12122')) { d.i122.e += e; d.i122.l += l; d.i122.p += p; } 
+                    else if (f.includes('12.361') || f.replace(/\./g, '').includes('12361')) { d.i361.e += e; d.i361.l += l; d.i361.p += p; } 
+                    else if (f.includes('12.365') || f.replace(/\./g, '').includes('12365')) { d.i365.e += e; d.i365.l += l; d.i365.p += p; } 
+                    else if (f.includes('12.367') || f.replace(/\./g, '').includes('12367')) { d.i367.e += e; d.i367.l += l; d.i367.p += p; }
                 }
+                if (v.includes('261.000')) { d.v261.e += e; d.v261.l += l; d.v261.p += p; }
+                else if (v.includes('262.000')) { d.v262.e += e; d.v262.l += l; d.v262.p += p; }
+            });
+            return d;
+        },
+        procETI(dados) {
+            let e = { e261: { e:0, l:0, p:0 }, e262: { e:0, l:0, p:0 } };
+            dados.forEach(item => {
+                const v = String(item['BW'] || item['Vínculo'] || item['CA Codigo'] || '').trim();
+                const emp = SIOPEApp.utils.limparNum(item['Valor Empenhado']);
+                const liq = SIOPEApp.utils.limparNum(item['Valor Liquidado']);
+                const pgo = SIOPEApp.utils.limparNum(item['Valor Pago']);
+                if (v.includes('261.004') || v.includes('261.0004')) { e.e261.e += emp; e.e261.l += liq; e.e261.p += pgo; } 
+                else if (v.includes('262.004') || v.includes('262.0004')) { e.e262.e += emp; e.e262.l += liq; e.e262.p += pgo; }
+            });
+            e.tot = { e: e.e261.e + e.e262.e, l: e.e261.l + e.e262.l, p: e.e261.p + e.e262.p };
+            return e;
+        }
+    },
+
+    // 5. MANIPULAÇÃO DA INTERFACE (UI)
+    ui: {
+        setTxt(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; },
+        setTbd(id, itens) {
+            const el = document.getElementById(id); if(!el) return;
+            if (!itens || !itens.length) { el.innerHTML = '<tr><td colspan="3" class="col-empty">Nenhum lançamento encontrado para esta regra.</td></tr>'; return; }
+            el.innerHTML = itens.map(i => `<tr><td class="col-nat">${i['Nat.Despesa'] || ''}</td><td class="col-desc">${i['Descrição'] || ''}</td><td class="col-val">${SIOPEApp.utils.fmtMoeda(SIOPEApp.utils.limparNum(i['Valor Receita']))}</td></tr>`).join('');
+        },
+        nomeArquivo(tipo, input) {
+            const lbl = document.getElementById(`label-${tipo}`);
+            if (input.files && input.files[0]) {
+                const n = SIOPEApp.utils.sanitizar(input.files[0].name);
+                const cr = tipo === 'receitas' ? '#10b981' : '#ef4444'; 
+                lbl.textContent = n;
+                document.querySelector(`#drop-zone-${tipo} .dropzone-subtitle`).innerHTML = `<span style="color: ${cr}; font-weight: bold;">✓</span> <span style="color: ${cr}; font-weight: 500;">${n} anexado</span>`;
+            }
+        },
+        abas(aba) {
+            const r = document.getElementById('modulo-receitas'), d = document.getElementById('modulo-despesas');
+            const br = document.getElementById('btn-tab-receitas'), bd = document.getElementById('btn-tab-despesas');
+            if(aba === 'receitas') { r.classList.remove('hidden'); d.classList.add('hidden'); br.classList.add('active'); bd.classList.remove('active'); } 
+            else { r.classList.add('hidden'); d.classList.remove('hidden'); br.classList.remove('active'); bd.classList.add('active'); }
+            
+            if (SIOPEApp.state.receitas.length > 0 || SIOPEApp.state.despesas.length > 0) {
+                setTimeout(() => SIOPEApp.ui.renderizar(), 50);
+            }
+        },
+        visao(tipo, v) {
+            const pre = tipo === 'rec' ? 'receitas' : 'despesas';
+            const b = document.getElementById(`container-blocos-${pre}`);
+            const t = document.getElementById(`container-tabela-${pre}-wrapper`);
+            const br = document.getElementById(`btn-visao-relatorio-${tipo}`);
+            const bt = document.getElementById(`btn-visao-tabela-${tipo}`);
+            if(v === 'relatorio') { b.style.display = 'block'; t.classList.remove('active'); br.classList.add('active'); bt.classList.remove('active'); } 
+            else { b.style.display = 'none'; t.classList.add('active'); br.classList.remove('active'); bt.classList.add('active'); }
+        },
+        montarTabela(dados, id, tipo) {
+            const cont = document.getElementById(id);
+            if(!cont) return;
+            if(!dados.length) { cont.innerHTML = `<p class="col-empty">Sem dados.</p>`; return; }
+            const cabs = Object.keys(dados[0]);
+            let h = `<div class="responsive-table"><table class="tabela-moderna"><thead><tr>`;
+            cabs.forEach((c, idx) => {
+                const cid = Object.keys(SIOPEApp.config.mapaColunas).find(k => SIOPEApp.config.mapaColunas[k] === c);
+                const vals = [...new Set(dados.map(i => String(i[c]).trim()))].sort();
+                const isV = c.includes('Valor');
+                const wid = tipo === 'receitas' ? (c === 'Descrição' ? 'width: 60%;' : 'width: 20%;') : (c === 'Vínculo' ? 'width: 25%;' : (c === 'Fonte' ? 'width: 20%;' : (c === 'Função/SubFunção' ? 'width: 15%;' : 'width: 13.3%;')));
+                const dropC = idx === cabs.length - 1 ? 'excel-dropdown dropdown-last-child hidden' : 'excel-dropdown hidden';
+                h += `
+                    <th data-col="${c}" style="${wid}">
+                        <div class="th-container ${isV ? 'th-right' : 'th-left'}">
+                            <span class="th-title-text">${c}</span>
+                            <button id="btn_drop_${cid}" class="btn-filtro-excel" data-action="toggle-drop">
+                                <span id="txt_${cid}">Todos</span> 🔻
+                            </button>
+                        </div>
+                        <div id="drop_${cid}" class="${dropC}">
+                            <input type="text" class="excel-search-input" data-action="search" data-target="${cid}" placeholder="Pesquisar...">
+                            <label class="select-all-label"><input type="checkbox" class="ms-select-all" data-target="${cid}"> Selecionar Tudo</label>
+                            <div class="excel-options-list">
+                                ${vals.map(v => `<label class="ms-item-label"><input type="checkbox" class="chk-item ms-item-${cid}" value="${v.replace(/"/g, '&quot;')}"> <span>${v || '(Vazio)'}</span></label>`).join('')}
+                            </div>
+                            <div class="excel-dropdown-actions">
+                                <button class="btn-excel-ok" data-action="apply" data-target="${cid}">OK</button>
+                                <button class="btn-excel-limpar" data-action="cancel" data-target="${cid}">Cancelar</button>
+                            </div>
+                        </div>
+                    </th>`;
+            });
+            h += `</tr></thead><tbody id="tbody_rows_${tipo}"></tbody></table></div>`;
+            cont.innerHTML = h;
+        },
+        renderizar() {
+            // Renderiza Receitas
+            const rFilt = SIOPEApp.core.filtrar('receitas');
+            const tbR = document.getElementById('tbody_rows_receitas');
+            if(tbR) {
+                tbR.innerHTML = rFilt.slice(0, SIOPEApp.state.limiteRec).map(i => `<tr><td class="col-monospaced">${i['Nat.Despesa']}</td><td class="col-desc">${i['Descrição']}</td><td class="col-right">${SIOPEApp.utils.fmtMoeda(SIOPEApp.utils.limparNum(i['Valor Receita']))}</td></tr>`).join('');
+                document.getElementById('container_btn_mais_receitas').style.display = rFilt.length > SIOPEApp.state.limiteRec ? 'block' : 'none';
+            }
+            const rp = SIOPEApp.core.procReceitas(rFilt);
+            this.setTxt('rec-mun-val', SIOPEApp.utils.fmtMoeda(rp.mun.t)); this.setTbd('rec-mun-tbd', rp.mun.i);
+            this.setTxt('rec-uni-val', SIOPEApp.utils.fmtMoeda(rp.uniao.t)); this.setTbd('rec-uni-tbd', rp.uniao.i);
+            this.setTxt('rec-est-val', SIOPEApp.utils.fmtMoeda(rp.est.t)); this.setTbd('rec-est-tbd', rp.est.i);
+            this.setTxt('rec-tot-imp-val', SIOPEApp.utils.fmtMoeda(rp.totImp));
+            this.setTxt('rec-apl-obr-val', SIOPEApp.utils.fmtMoeda(rp.aplObr)); this.setTbd('rec-apl-obr-tbd', []);
+            this.setTxt('rec-ded-val', SIOPEApp.utils.fmtMoeda(rp.ded.t)); this.setTbd('rec-ded-tbd', rp.ded.i);
+            this.setTxt('rec-apl-min-val', SIOPEApp.utils.fmtMoeda(rp.aplMin));
+            this.setTxt('rec-fun-pri-val', SIOPEApp.utils.fmtMoeda(rp.fun.t)); this.setTbd('rec-fun-pri-tbd', rp.fun.i);
+            this.setTxt('rec-fun-et-val', SIOPEApp.utils.fmtMoeda(rp.funET.t)); this.setTbd('rec-fun-et-tbd', rp.funET.i);
+            this.setTxt('rec-apl-fin-val', SIOPEApp.utils.fmtMoeda(rp.aplFin.t)); this.setTbd('rec-apl-fin-tbd', rp.aplFin.i);
+            this.setTxt('rec-fnd-val', SIOPEApp.utils.fmtMoeda(rp.fnde.t)); this.setTbd('rec-fnd-tbd', rp.fnde.i);
+            this.setTxt('rec-est-tra-val', SIOPEApp.utils.fmtMoeda(rp.estTra.t)); this.setTbd('rec-est-tra-tbd', rp.estTra.i);
+            this.setTxt('rec-tot-adi-val', SIOPEApp.utils.fmtMoeda(rp.totAdi));
+
+            // Renderiza Despesas
+            const dFilt = SIOPEApp.core.filtrar('despesas');
+            const tbD = document.getElementById('tbody_rows_despesas');
+            if(tbD) {
+                tbD.innerHTML = dFilt.slice(0, SIOPEApp.state.limiteDesp).map(i => `<tr><td class="col-monospaced">${i['Função/SubFunção']}</td><td class="col-desc">${i['Vínculo']}</td><td class="col-center">${i['Fonte']}</td><td class="col-right">${SIOPEApp.utils.fmtMoeda(SIOPEApp.utils.limparNum(i['Valor Empenhado']))}</td><td class="col-right">${SIOPEApp.utils.fmtMoeda(SIOPEApp.utils.limparNum(i['Valor Liquidado']))}</td><td class="col-right col-destaque">${SIOPEApp.utils.fmtMoeda(SIOPEApp.utils.limparNum(i['Valor Pago']))}</td></tr>`).join('');
+                document.getElementById('container_btn_mais_despesas').style.display = dFilt.length > SIOPEApp.state.limiteDesp ? 'block' : 'none';
+            }
+            const dp = SIOPEApp.core.procDespesas(dFilt);
+            const cP = v => SIOPEApp.state.fundebTotal > 0 ? (v / SIOPEApp.state.fundebTotal) * 100 : 0;
+            const tFE = dp.v261.e + dp.v262.e, tFL = dp.v261.l + dp.v262.l, tFP = dp.v261.p + dp.v262.p;
+
+            this.setTxt('f-261-emp', SIOPEApp.utils.fmtMoeda(dp.v261.e)); this.setTxt('f-261-liq', SIOPEApp.utils.fmtMoeda(dp.v261.l)); this.setTxt('f-261-pag', SIOPEApp.utils.fmtMoeda(dp.v261.p));
+            this.setTxt('f-262-emp', SIOPEApp.utils.fmtMoeda(dp.v262.e)); this.setTxt('f-262-liq', SIOPEApp.utils.fmtMoeda(dp.v262.l)); this.setTxt('f-262-pag', SIOPEApp.utils.fmtMoeda(dp.v262.p));
+            this.setTxt('f-tot-emp', SIOPEApp.utils.fmtMoeda(tFE)); this.setTxt('f-tot-liq', SIOPEApp.utils.fmtMoeda(tFL)); this.setTxt('f-tot-pag', SIOPEApp.utils.fmtMoeda(tFP));
+            this.setTxt('fp-261-emp', SIOPEApp.utils.fmtPct(cP(dp.v261.e))); this.setTxt('fp-261-liq', SIOPEApp.utils.fmtPct(cP(dp.v261.l))); this.setTxt('fp-261-pag', SIOPEApp.utils.fmtPct(cP(dp.v261.p)));
+            this.setTxt('fp-262-emp', SIOPEApp.utils.fmtPct(cP(dp.v262.e))); this.setTxt('fp-262-liq', SIOPEApp.utils.fmtPct(cP(dp.v262.l))); this.setTxt('fp-262-pag', SIOPEApp.utils.fmtPct(cP(dp.v262.p)));
+            this.setTxt('fp-tot-emp', SIOPEApp.utils.fmtPct(cP(tFE))); this.setTxt('fp-tot-liq', SIOPEApp.utils.fmtPct(cP(tFL))); this.setTxt('fp-tot-pag', SIOPEApp.utils.fmtPct(cP(tFP)));
+
+            const eti = SIOPEApp.core.procETI(dFilt);
+            this.setTxt('eti-261-emp', SIOPEApp.utils.fmtMoeda(eti.e261.e)); this.setTxt('eti-261-liq', SIOPEApp.utils.fmtMoeda(eti.e261.l)); this.setTxt('eti-261-pag', SIOPEApp.utils.fmtMoeda(eti.e261.p));
+            this.setTxt('eti-262-emp', SIOPEApp.utils.fmtMoeda(eti.e262.e)); this.setTxt('eti-262-liq', SIOPEApp.utils.fmtMoeda(eti.e262.l)); this.setTxt('eti-262-pag', SIOPEApp.utils.fmtMoeda(eti.e262.p));
+            this.setTxt('eti-tot-emp', SIOPEApp.utils.fmtMoeda(eti.tot.e)); this.setTxt('eti-tot-liq', SIOPEApp.utils.fmtMoeda(eti.tot.l)); this.setTxt('eti-tot-pag', SIOPEApp.utils.fmtMoeda(eti.tot.p));
+
+            const tE = dp.i122.e + dp.i361.e + dp.i365.e + dp.i367.e;
+            const tL = dp.i122.l + dp.i361.l + dp.i365.l + dp.i367.l;
+            const tP = dp.i122.p + dp.i361.p + dp.i365.p + dp.i367.p;
+            this.setTxt('res-emp-val', SIOPEApp.utils.fmtMoeda(tE)); this.setTxt('res-emp-pct', (rp.aplMin>0?((tE*25)/rp.aplMin).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '0,00') + '%');
+            this.setTxt('res-liq-val', SIOPEApp.utils.fmtMoeda(tL)); this.setTxt('res-liq-pct', (rp.aplMin>0?((tL*25)/rp.aplMin).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '0,00') + '%');
+            this.setTxt('res-pag-val', SIOPEApp.utils.fmtMoeda(tP)); this.setTxt('res-pag-pct', (rp.aplMin>0?((tP*25)/rp.aplMin).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '0,00') + '%');
+
+            this.setTxt('d-12122-emp', SIOPEApp.utils.fmtMoeda(dp.i122.e)); this.setTxt('d-12122-liq', SIOPEApp.utils.fmtMoeda(dp.i122.l)); this.setTxt('d-12122-pag', SIOPEApp.utils.fmtMoeda(dp.i122.p));
+            this.setTxt('d-12361-emp', SIOPEApp.utils.fmtMoeda(dp.i361.e)); this.setTxt('d-12361-liq', SIOPEApp.utils.fmtMoeda(dp.i361.l)); this.setTxt('d-12361-pag', SIOPEApp.utils.fmtMoeda(dp.i361.p));
+            this.setTxt('d-12365-emp', SIOPEApp.utils.fmtMoeda(dp.i365.e)); this.setTxt('d-12365-liq', SIOPEApp.utils.fmtMoeda(dp.i365.l)); this.setTxt('d-12365-pag', SIOPEApp.utils.fmtMoeda(dp.i365.p));
+            this.setTxt('d-12367-emp', SIOPEApp.utils.fmtMoeda(dp.i367.e)); this.setTxt('d-12367-liq', SIOPEApp.utils.fmtMoeda(dp.i367.l)); this.setTxt('d-12367-pag', SIOPEApp.utils.fmtMoeda(dp.i367.p));
+
+            this.graficos(rp, dp);
+        },
+        graficos(rp, dp) {
+            if(typeof Chart === 'undefined') return;
+
+            const cxR = document.getElementById('chartReceitas');
+            if(cxR && cxR.offsetParent !== null) { 
+                if(SIOPEApp.state.chartRecInst) SIOPEApp.state.chartRecInst.destroy();
+                SIOPEApp.state.chartRecInst = new Chart(cxR, { type: 'doughnut', data: { labels: ['Municipal', 'União', 'Estado', 'Fundeb', 'Adicionais'], datasets: [{ data: [rp.mun.t, rp.uniao.t, rp.est.t, rp.fun.t, (rp.aplFin.t + rp.fnde.t + rp.estTra.t + rp.funET.t)], backgroundColor: ['#10b981', '#059669', '#34d399', '#0ea5e9', '#6366f1'], borderWidth: 0 }] }, options: { maintainAspectRatio: false, plugins: { legend: { position: 'right' } }, cutout: '65%' } });
+            }
+            
+            const cxD = document.getElementById('chartDespesas');
+            if(cxD && cxD.offsetParent !== null) { 
+                if(SIOPEApp.state.chartDespInst) SIOPEApp.state.chartDespInst.destroy();
+                SIOPEApp.state.chartDespInst = new Chart(cxD, { type: 'bar', data: { labels: ['12.122', '12.361', '12.365', '12.367'], datasets: [{ label: 'Liquidado', data: [dp.i122.l, dp.i361.l, dp.i365.l, dp.i367.l], backgroundColor: ['rgba(59,130,246,0.7)', 'rgba(99,102,241,0.7)', 'rgba(139,92,246,0.7)', 'rgba(20,184,166,0.7)'] }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            }
+        }
+    },
+
+    // 6. SISTEMA DE FILTROS (FILTERS)
+    filters: {
+        limparTodos() {
+            SIOPEApp.state.filtros = {};
+            document.querySelectorAll('.btn-filtro-excel').forEach(b => { b.classList.remove('active-filter'); document.getElementById(`txt_${b.id.replace('btn_drop_','')}`).innerText = "Todos"; SIOPEApp.filters.sincronizar(b.id.replace('btn_drop_','')); });
+            SIOPEApp.state.limiteRec = 50; SIOPEApp.state.limiteDesp = 50;
+            SIOPEApp.ui.renderizar();
+        },
+        pesquisar(id, input) {
+            const t = input.value.toLowerCase();
+            document.querySelectorAll(`#drop_${id} .ms-item-label`).forEach(lbl => lbl.style.display = lbl.textContent.toLowerCase().includes(t) ? '' : 'none');
+        },
+        toggleAll(id, isChecked) { document.querySelectorAll(`.ms-item-${id}`).forEach(c => { if(c.closest('label').style.display !== 'none') c.checked = isChecked; }); },
+        verificarAll(id) { document.querySelector(`.ms-select-all[data-target="${id}"]`).checked = Array.from(document.querySelectorAll(`.ms-item-${id}`)).every(c => c.checked); },
+        sincronizar(id) {
+            const vals = SIOPEApp.state.filtros[id];
+            if(vals === undefined) { document.querySelectorAll(`.ms-item-${id}`).forEach(c => c.checked = false); document.querySelector(`.ms-select-all[data-target="${id}"]`).checked = false; } 
+            else { document.querySelectorAll(`.ms-item-${id}`).forEach(c => c.checked = vals.includes(c.value)); this.verificarAll(id); }
+        },
+        fechar(id) {
+            document.getElementById(`drop_${id}`).classList.add('hidden');
+            document.querySelector(`#drop_${id} .excel-search-input`).value = "";
+            document.querySelectorAll(`#drop_${id} .ms-item-label`).forEach(l => l.style.display = '');
+            this.sincronizar(id);
+        },
+        aplicar(id) {
+            const vals = [];
+            document.querySelectorAll(`.ms-item-${id}`).forEach(c => { if(c.checked) vals.push(c.value); });
+            if(vals.length === document.querySelectorAll(`.ms-item-${id}`).length || vals.length === 0) delete SIOPEApp.state.filtros[id]; 
+            else SIOPEApp.state.filtros[id] = vals; 
+            SIOPEApp.state.limiteRec = 50; SIOPEApp.state.limiteDesp = 50;
+            const cbs = document.querySelectorAll(`.ms-item-${id}`);
+            const t = document.getElementById(`txt_${id}`), b = document.getElementById(`btn_drop_${id}`);
+            if(!SIOPEApp.state.filtros[id]) { t.innerText = "Todos"; b.classList.remove('active-filter'); }
+            else if(vals.length === 1) { t.innerText = vals[0]; b.classList.add('active-filter'); }
+            else { t.innerText = vals.length + " sel."; b.classList.add('active-filter'); }
+            document.getElementById(`drop_${id}`).classList.add('hidden');
+            SIOPEApp.ui.renderizar();
+        }
+    },
+
+    // 7. EXPORTAÇÕES (EXCEL E PDF)
+    exports: {
+        excel(tipo, btn) {
+            const orig = btn.innerHTML; btn.innerHTML = "⏳..."; btn.disabled = true;
+            const dados = SIOPEApp.core.filtrar(tipo);
+            if(!dados.length) { btn.innerHTML = orig; btn.disabled = false; return alert('Sem dados.'); }
+            const func = () => {
+                const maped = tipo === 'receitas' ? dados.map(r => ({ 'Nat.Despesa': SIOPEApp.utils.sanitizarExcel(r['Nat.Despesa']), 'Descrição': SIOPEApp.utils.sanitizarExcel(r['Descrição']), 'Valor Receita': SIOPEApp.utils.limparNum(r['Valor Receita']) })) : dados.map(r => ({ 'Função/SubFunção': SIOPEApp.utils.sanitizarExcel(r['Função/SubFunção']), 'Vínculo': SIOPEApp.utils.sanitizarExcel(r['Vínculo']), 'Fonte': SIOPEApp.utils.sanitizarExcel(r['Fonte']), 'Valor Empenhado': SIOPEApp.utils.limparNum(r['Valor Empenhado']), 'Valor Liquidado': SIOPEApp.utils.limparNum(r['Valor Liquidado']), 'Valor Pago': SIOPEApp.utils.limparNum(r['Valor Pago']) }));
+                const ws = XLSX.utils.json_to_sheet(maped), wb = XLSX.utils.book_new();
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for(let R = range.s.r + 1; R <= range.e.r; ++R) {
+                    (tipo==='receitas'?[2]:[3,4,5]).forEach(C => { const cell = ws[XLSX.utils.encode_cell({c: C, r: R})]; if(cell && cell.t === 'n') cell.z = '"R$"#,##0.00;"R$"-#,##0.00'; });
+                }
+                XLSX.utils.book_append_sheet(wb, ws, tipo);
+                XLSX.writeFile(wb, `${tipo}_filtradas.xlsx`);
+                btn.innerHTML = orig; btn.disabled = false;
+            };
+            if(typeof XLSX === 'undefined') { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload = func; document.head.appendChild(s); } else func();
+        },
+        pdf(btn) {
+            const orig = btn.innerHTML; btn.innerHTML = "⏳ Gerando PDF..."; btn.disabled = true;
+            
+            const func = async () => {
+                const dash = document.getElementById('dashboard');
+                const modRec = document.getElementById('modulo-receitas');
+                const modDesp = document.getElementById('modulo-despesas');
+                
+                const recHidden = modRec.classList.contains('hidden');
+                const despHidden = modDesp.classList.contains('hidden');
+                
+                // 1. Esconde a UI de navegação
+                document.querySelector('.tabs-wrapper').style.display = 'none';
+                document.querySelectorAll('.controls-bar').forEach(c => c.style.display = 'none');
+                
+                // 2. Mostra os dois módulos ao mesmo tempo para a "foto"
+                modRec.classList.remove('hidden');
+                modDesp.classList.remove('hidden');
+                
+                // 3. Força a visão de relatórios (esconde a tabela de banco de dados para o PDF não ficar gigante)
+                SIOPEApp.ui.visao('rec', 'relatorio');
+                SIOPEApp.ui.visao('desp', 'relatorio');
+                
+                // Força uma quebra de página antes do módulo de despesas
+                modDesp.style.pageBreakBefore = 'always';
+
+                // Redimensiona gráficos para garantir que apareçam
+                if (SIOPEApp.state.chartRecInst) SIOPEApp.state.chartRecInst.resize();
+                if (SIOPEApp.state.chartDespInst) SIOPEApp.state.chartDespInst.resize();
+
+                // Aguarda as animações do chart.js terminarem
+                await new Promise(r => setTimeout(r, 1000)); 
+
+                const opt = {
+                    margin:       10,
+                    filename:     'Relatorio_Consolidado_SIOPE.pdf',
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true, logging: false },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak:    { mode: ['css', 'legacy'], avoid: ['.evitar-quebra-impressao', '.bloco-relatorio', '.bloco-despesa-row', '.detalhamento-card', '.bar-total'] }
+                };
+
+                try {
+                    await html2pdf().set(opt).from(dash).save();
+                } catch(e) {
+                    alert("Erro ao gerar PDF: " + e.message);
+                } finally {
+                    // Restaura a interface para o estado original
+                    document.querySelector('.tabs-wrapper').style.display = 'flex';
+                    document.querySelectorAll('.controls-bar').forEach(c => c.style.display = 'flex');
+                    modDesp.style.pageBreakBefore = '';
+                    
+                    if (recHidden) modRec.classList.add('hidden');
+                    if (despHidden) modDesp.classList.add('hidden');
+                    
+                    SIOPEApp.ui.abas(recHidden ? 'despesas' : 'receitas'); 
+                    
+                    btn.innerHTML = orig; 
+                    btn.disabled = false;
+                }
+            };
+
+            // Baixa a biblioteca apenas se o usuário clicar no botão
+            if(typeof html2pdf === 'undefined') {
+                const s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                s.onload = func; document.head.appendChild(s);
+            } else { func(); }
+        }
+    },
+
+    // 8. DELEGAÇÃO DE EVENTOS E INICIALIZAÇÃO
+    events: {
+        init() {
+            // Entradas de Arquivos
+            document.getElementById('csv-receitas').addEventListener('change', e => SIOPEApp.ui.nomeArquivo('receitas', e.target));
+            document.getElementById('csv-despesas').addEventListener('change', e => SIOPEApp.ui.nomeArquivo('despesas', e.target));
+            
+            // Botão Mestre
+            document.getElementById('btn-processar').addEventListener('click', async (e) => {
+                const btn = e.target.closest('button');
+                const fR = document.getElementById('csv-receitas').files[0], fD = document.getElementById('csv-despesas').files[0];
+                if (!fR || !fD) return alert('Selecione os dois arquivos CSV.');
+                const origTxt = btn.innerHTML; btn.innerHTML = "⏳ Processando..."; btn.disabled = true;
+                try {
+                    const [txtR, txtD] = await Promise.all([SIOPEApp.utils.lerArquivo(fR), SIOPEApp.utils.lerArquivo(fD)]);
+                    SIOPEApp.state.receitas = SIOPEApp.utils.csvParaObj(txtR, { 'R': 'Nat.Despesa', 'K': 'Descrição', 'AB': 'Valor Receita' });
+                    SIOPEApp.state.despesas = SIOPEApp.utils.csvParaObj(txtD, { 'BJ': 'Função/SubFunção', 'BW': 'Vínculo', 'AT': 'Fonte', 'L': 'Valor Empenhado', 'N': 'Valor Liquidado', 'P': 'Valor Pago' });
+                    SIOPEApp.state.filtros = {}; SIOPEApp.state.limiteRec = 50; SIOPEApp.state.limiteDesp = 50;
+                    
+                    SIOPEApp.ui.montarTabela(SIOPEApp.state.receitas, 'nova-tabela-receitas', 'receitas');
+                    SIOPEApp.ui.montarTabela(SIOPEApp.state.despesas, 'nova-tabela-despesas', 'despesas');
+                    
+                    document.getElementById('upload-section').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    SIOPEApp.ui.abas('receitas');
+                    
+                } catch(err) { alert("Erro: " + err.message); } finally { btn.innerHTML = origTxt; btn.disabled = false; }
+            });
+
+            // Abas
+            document.getElementById('btn-tab-receitas').addEventListener('click', () => SIOPEApp.ui.abas('receitas'));
+            document.getElementById('btn-tab-despesas').addEventListener('click', () => SIOPEApp.ui.abas('despesas'));
+
+            // Visões Receitas
+            document.getElementById('btn-visao-relatorio-rec').addEventListener('click', () => SIOPEApp.ui.visao('rec', 'relatorio'));
+            document.getElementById('btn-visao-tabela-rec').addEventListener('click', () => SIOPEApp.ui.visao('rec', 'tabela'));
+            
+            // Visões Despesas
+            document.getElementById('btn-visao-relatorio-desp').addEventListener('click', () => SIOPEApp.ui.visao('desp', 'relatorio'));
+            document.getElementById('btn-visao-tabela-desp').addEventListener('click', () => SIOPEApp.ui.visao('desp', 'tabela'));
+
+            // Ações Globais
+            document.querySelectorAll('.btn-print').forEach(b => b.addEventListener('click', () => window.print()));
+            document.querySelectorAll('.btn-pdf').forEach(b => b.addEventListener('click', function() { SIOPEApp.exports.pdf(this) }));
+            document.querySelector('.btn-excel-rec').addEventListener('click', function() { SIOPEApp.exports.excel('receitas', this) });
+            document.querySelector('.btn-excel-desp').addEventListener('click', function() { SIOPEApp.exports.excel('despesas', this) });
+            document.querySelectorAll('.btn-clear').forEach(b => b.addEventListener('click', SIOPEApp.filters.limparTodos));
+            
+            // Carregar Mais
+            document.getElementById('container_btn_mais_receitas').addEventListener('click', () => { SIOPEApp.state.limiteRec += 50; SIOPEApp.ui.renderizar(); });
+            document.getElementById('container_btn_mais_despesas').addEventListener('click', () => { SIOPEApp.state.limiteDesp += 50; SIOPEApp.ui.renderizar(); });
+
+            // Menus Referência
+            document.querySelectorAll('.select-referencia').forEach(s => s.addEventListener('change', e => document.querySelectorAll('.select-referencia').forEach(el => el.value = e.target.value)));
+
+            // Delegação de Eventos (Dropdowns Dinâmicos)
+            document.addEventListener('click', e => {
+                const btn = e.target.closest('[data-action="toggle-drop"]');
+                if (btn) {
+                    e.stopPropagation(); const id = btn.id.replace('btn_drop_', ''); const drop = btn.closest('th').querySelector('.excel-dropdown');
+                    document.querySelectorAll('.excel-dropdown').forEach(d => { if (d !== drop) d.classList.add('hidden'); });
+                    if (drop.classList.contains('hidden')) { SIOPEApp.filters.sincronizar(id); drop.classList.remove('hidden'); } else drop.classList.add('hidden');
+                    return;
+                }
+                const act = e.target.closest('button[data-action]');
+                if (act && act.dataset.action === 'apply') return SIOPEApp.filters.aplicar(act.dataset.target);
+                if (act && act.dataset.action === 'cancel') return SIOPEApp.filters.fechar(act.dataset.target);
+                
+                if (!e.target.closest('th')) document.querySelectorAll('.excel-dropdown:not(.hidden)').forEach(d => SIOPEApp.filters.fechar(d.id.replace('drop_', '')));
+            });
+
+            document.addEventListener('input', e => { if (e.target.dataset.action === 'search') SIOPEApp.filters.pesquisar(e.target.dataset.target, e.target); });
+            document.addEventListener('change', e => {
+                if (e.target.classList.contains('ms-select-all')) SIOPEApp.filters.toggleAll(e.target.dataset.target, e.target.checked);
+                else if (e.target.classList.contains('chk-item')) SIOPEApp.filters.verificarAll(e.target.classList.toString().match(/ms-item-([^\s]+)/)[1]);
             });
         }
-    });
-}
+    },
 
-function renderizarTabela() {
-    const dataAtual = new Date();
-    const anoAtual = dataAtual.getFullYear();
-    const mesAtual = dataAtual.getMonth(); 
-    const nomesMeses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+    // 9. INICIALIZADOR
+    init() { this.events.init(); }
+};
 
-    // Gera o menu Suspenso (Dropdown) sincronizado
-    const selectReferencia = `
-        <select class="select-referencia" onchange="document.querySelectorAll('.select-referencia').forEach(el => el.value = this.value)" style="background: transparent; border: none; font-weight: 700; color: #0f172a; font-family: 'Inter', sans-serif; font-size: 12px; cursor: pointer; outline: none; margin-left: -2px;">
-            <optgroup label="Mensal">
-                <option value="M">${nomesMeses[mesAtual]}/${anoAtual}</option>
-            </optgroup>
-            <optgroup label="Bimestral (RREO)">
-                <option value="B1">1º BIMESTRE / ${anoAtual}</option>
-                <option value="B2">2º BIMESTRE / ${anoAtual}</option>
-                <option value="B3">3º BIMESTRE / ${anoAtual}</option>
-                <option value="B4">4º BIMESTRE / ${anoAtual}</option>
-                <option value="B5">5º BIMESTRE / ${anoAtual}</option>
-                <option value="B6">6º BIMESTRE / ${anoAtual}</option>
-            </optgroup>
-            <optgroup label="Trimestral">
-                <option value="T1">1º TRIMESTRE / ${anoAtual}</option>
-                <option value="T2">2º TRIMESTRE / ${anoAtual}</option>
-                <option value="T3">3º TRIMESTRE / ${anoAtual}</option>
-                <option value="T4">4º TRIMESTRE / ${anoAtual}</option>
-            </optgroup>
-            <optgroup label="Quadrimestral (RGF)">
-                <option value="Q1">1º QUADRIMESTRE / ${anoAtual}</option>
-                <option value="Q2">2º QUADRIMESTRE / ${anoAtual}</option>
-                <option value="Q3">3º QUADRIMESTRE / ${anoAtual}</option>
-            </optgroup>
-        </select>
-    `;
-
-    // CABEÇALHO OFICIAL MODERNIZADO COM LOGO
-    const cabecalhoOficial = `
-        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px 20px; margin-bottom: 32px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.03); text-align: center; position: relative; overflow: hidden;">
-            <div style="position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, #0284c7, #10b981);"></div>
-            
-            <!-- INÍCIO DO LOGOTIPO -->
-            <img src="./brasao.png" 
-                 alt="Brasão da Prefeitura" 
-                 style="height: 85px; width: auto; margin-bottom: 16px; object-fit: contain; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-            <!-- FIM DO LOGOTIPO -->
-
-            <h2 style="margin: 0 0 4px 0; font-size: 1.15rem; color: #0f172a; font-weight: 700; letter-spacing: -0.5px;">PREFEITURA MUNICIPAL DE BOTUCATU</h2>
-            <h3 style="margin: 0 0 6px 0; font-size: 0.95rem; color: #475569; font-weight: 600;">SECRETARIA MUNICIPAL DA FAZENDA</h3>
-            <p style="margin: 0 0 24px 0; font-size: 0.85rem; color: #64748b;">Departamento de Planejamento e Orçamento</p>
-            
-            <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
-                <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 500; color: #475569;">
-                    Referência: ${selectReferencia}
-                </div>
-                <div style="background: #f0fdf4; border: 1px solid #a7f3d0; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; color: #047857;">
-                    Manutenção e Desenvolvimento do Ensino (Art. 212 - CF)
-                </div>
-            </div>
-        </div>
-    `;
-
-    // ==========================================================================
-    /* RECEITAS */
-    // ==========================================================================
-    const receitasFiltradas = obterDadosFiltrados('receitas');
-    const tbodyRec = document.getElementById('tbody_rows_receitas');
-    const containerBtnMaisRec = document.getElementById('container_btn_mais_receitas');
-
-    if (tbodyRec) {
-        tbodyRec.innerHTML = receitasFiltradas.slice(0, limiteReceitas).map(item => `
-            <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 12px 16px; font-family: 'Consolas', monospace; font-size: 13px; color: #475569;">${item['Nat.Despesa']}</td>
-                <td style="padding: 12px 16px; font-size: 13px; color: #1e293b;">${item['Descrição']}</td>
-                <td style="padding: 12px 16px; text-align: right; font-family: 'Consolas', monospace; font-weight: 600; font-size: 13px; color: #0f172a;">${formatarMoeda(limparEConverterNumero(item['Valor Receita']))}</td>
-            </tr>
-        `).join('');
-        if (containerBtnMaisRec) containerBtnMaisRec.style.display = receitasFiltradas.length > limiteReceitas ? 'block' : 'none';
-    }
-
-    const recProc = processarDadosReceitas(receitasFiltradas);
-    const containerBlocosRec = document.getElementById('container-blocos-receitas');
-    if (containerBlocosRec) {
-        containerBlocosRec.innerHTML = cabecalhoOficial + `
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.03); display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-around;">
-                <div style="width: 100%; max-width: 450px; height: 250px;">
-                    <canvas id="chartReceitas"></canvas>
-                </div>
-                <div style="flex: 1; min-width: 300px; padding: 0 15px;">
-                    <h4 style="margin: 0 0 12px 0; color: #0f172a; font-size: 1.15rem;">Composição das Receitas de Ensino</h4>
-                    <p style="color: #64748b; font-size: 0.9rem; line-height: 1.6; margin: 0;">O gráfico ilustra a distribuição percentual das principais fontes de recursos destinados à educação neste período.</p>
-                </div>
-            </div>
-
-            <!-- Adicionada a classe 'quebra-pagina-impressao' para forçar a folha 2 -->
-            <div class="quebra-pagina-impressao" style="margin: 30px 0 16px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
-                <h4 style="margin: 0; color: #0f172a; font-size: 1.1rem;">Impostos e Transferências</h4>
-            </div>
-            ${gerarBlocoRelatorio('MUNICIPAL (Col. R: 1112, 1113, 1114)', recProc.municipal.total, recProc.municipal.itens, '#10b981', '#f0fdf4')}
-            ${gerarBlocoRelatorio('UNIÃO - FPM (Col. R: 1711)', recProc.uniaoFPM.total, recProc.uniaoFPM.itens, '#059669', '#ecfdf5')}
-            ${gerarBlocoRelatorio('ESTADO (Col. R: 1721.50, .51, .52)', recProc.estado.total, recProc.estado.itens, '#34d399', '#f0fdf4')}
-            
-            <div style="background: linear-gradient(to right, #0f172a, #1e293b); color: white; padding: 16px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-                <span style="font-weight: 600; font-size: 14px;">TOTAL DE IMPOSTOS E TRANSFERÊNCIAS</span>
-                <span style="font-weight: 700; font-size: 18px; font-family: 'Consolas', monospace;">${formatarMoeda(recProc.totalImpostosTransferencias)}</span>
-            </div>
-
-            ${gerarBlocoRelatorio('APLICAÇÃO OBRIGATÓRIA (25%)', recProc.aplicacaoObrigatoria25, [], '#0284c7', '#f0f9ff')}
-            ${gerarBlocoRelatorio('DEDUÇÕES PARA FORMAÇÃO - FUNDEB (Col. R: 9510)', recProc.deducoes.total, recProc.deducoes.itens, '#f59e0b', '#fffbeb')}
-            
-            <div style="background: linear-gradient(to right, #4338ca, #4f46e5); color: white; padding: 16px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-                <span style="font-weight: 600; font-size: 14px;">APLICAÇÃO MÍNIMA OBRIGATÓRIA - RECURSOS PRÓPRIOS</span>
-                <span style="font-weight: 700; font-size: 18px; font-family: 'Consolas', monospace;">${formatarMoeda(recProc.aplicacaoMinimaRecursosProprios)}</span>
-            </div>
-
-            <div style="margin: 30px 0 16px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
-                <h4 style="margin: 0; color: #0f172a; font-size: 1.1rem;">Fundeb e Receitas Adicionais</h4>
-            </div>
-            
-            ${gerarBlocoRelatorio('FUNDEB PRINCIPAL (Col. R: 1751.50... / 1321.01...)', recProc.fundeb.total, recProc.fundeb.itens, '#0ea5e9', '#f0f9ff')}
-            ${gerarBlocoRelatorio('TRANSFERÊNCIA RECURSOS FUNDEB DESTINADOS CRIAÇÃO MATRÍCULAS E.T', recProc.fundebMatriculasET.total, recProc.fundebMatriculasET.itens, '#0284c7', '#f0f9ff')}
-            
-            ${gerarBlocoRelatorio('RECEITA DA APLICAÇÃO FINANCEIRA', recProc.aplicacaoFinanceira.total, recProc.aplicacaoFinanceira.itens, '#0284c7', '#f0f9ff')}
-            ${gerarBlocoRelatorio('TRANSFERÊNCIAS DO FNDE', recProc.fnde.total, recProc.fnde.itens, '#0284c7', '#f0f9ff')}
-            ${gerarBlocoRelatorio('TRANSFERÊNCIAS DO ESTADO (Ensino)', recProc.estadoTransferencias.total, recProc.estadoTransferencias.itens, '#0284c7', '#f0f9ff')}
-            
-            <div style="background: linear-gradient(to right, #0284c7, #0369a1); color: white; padding: 16px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-                <span style="font-weight: 600; font-size: 14px;">RECEITAS ADICIONAIS PARA O FINANCIAMENTO DO ENSINO</span>
-                <span style="font-weight: 700; font-size: 18px; font-family: 'Consolas', monospace;">${formatarMoeda(recProc.totalReceitasAdicionaisEnsino)}</span>
-            </div>
-        `;
-    }
-    
-    // ==========================================================================
-    /* DESPESAS */
-    // ==========================================================================
-    const despesasFiltradas = obterDadosFiltrados('despesas');
-    const tbodyDesp = document.getElementById('tbody_rows_despesas');
-    const containerBtnMaisDesp = document.getElementById('container_btn_mais_despesas');
-
-    if (tbodyDesp) {
-        tbodyDesp.innerHTML = despesasFiltradas.slice(0, limiteDespesas).map(item => `
-            <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 12px 16px; font-family: 'Consolas', monospace; font-size: 13px; color: #475569;">${item['Função/SubFunção']}</td>
-                <td style="padding: 12px 16px; font-size: 13px; color: #1e293b;">${item['Vínculo']}</td>
-                <td style="padding: 12px 16px; font-family: 'Consolas', monospace; font-size: 13px; color: #475569; text-align: center;">${item['Fonte']}</td>
-                <td style="padding: 12px 16px; text-align: right; font-family: 'Consolas', monospace; font-weight: 600; font-size: 13px;">${formatarMoeda(limparEConverterNumero(item['Valor Empenhado']))}</td>
-                <td style="padding: 12px 16px; text-align: right; font-family: 'Consolas', monospace; font-weight: 600; font-size: 13px;">${formatarMoeda(limparEConverterNumero(item['Valor Liquidado']))}</td>
-                <td style="padding: 12px 16px; text-align: right; font-family: 'Consolas', monospace; font-weight: 600; font-size: 13px; color: #0284c7;">${formatarMoeda(limparEConverterNumero(item['Valor Pago']))}</td>
-            </tr>
-        `).join('');
-        if (containerBtnMaisDesp) containerBtnMaisDesp.style.display = despesasFiltradas.length > limiteDespesas ? 'block' : 'none';
-    }
-
-    const despProc = processarDadosDespesas(despesasFiltradas);
-    const baseAplicacaoMinima = recProc.aplicacaoMinimaRecursosProprios;
-    
-    const tEmp = despProc.info12122.empenhado + despProc.info12361.empenhado + despProc.info12365.empenhado + despProc.info12367.empenhado;
-    const tLiq = despProc.info12122.liquidado + despProc.info12361.liquidado + despProc.info12365.liquidado + despProc.info12367.liquidado;
-    const tPag = despProc.info12122.pago + despProc.info12361.pago + despProc.info12365.pago + despProc.info12367.pago;
-
-    const pEmp = baseAplicacaoMinima > 0 ? ((tEmp * 25) / baseAplicacaoMinima).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
-    const pLiq = baseAplicacaoMinima > 0 ? ((tLiq * 25) / baseAplicacaoMinima).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
-    const pPag = baseAplicacaoMinima > 0 ? ((tPag * 25) / baseAplicacaoMinima).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
-
-    // ==========================================================================
-    /* CÁLCULOS MATRIZ FUNDEB */
-    // ==========================================================================
-    /* Totais Absolutos */
-    const tFundebEmp = despProc.infoVinculo261.empenhado + despProc.infoVinculo262.empenhado;
-    const tFundebLiq = despProc.infoVinculo261.liquidado + despProc.infoVinculo262.liquidado;
-    const tFundebPag = despProc.infoVinculo261.pago + despProc.infoVinculo262.pago;
-
-    // Percentuais (Cálculo Reverso sobre a Receita Arrecadada)
-    const calcPct = (v) => valorTotalFundeb > 0 ? ((v / valorTotalFundeb) * 100) : 0;
-    const fmtPct = (p) => p.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '%';
-
-    // ==========================================================================
-    /* PREPARAÇÃO DA TABELA ETI PARA INJEÇÃO LOGO ABAIXO DO FUNDEB */
-    // ==========================================================================
-    let htmlDaTabelaETI = '';
-    try {
-        const resultadosETI = processarTabelaETI(despesasFiltradas); 
-        htmlDaTabelaETI = gerarHTMLTabelaETI(resultadosETI); 
-    } catch (erroEti) {
-        console.warn("Aviso: Falha ao carregar a tabela ETI isolada.", erroEti);
-    }
-
-    const containerBlocosDesp = document.getElementById('container-blocos-despesas');
-    if (containerBlocosDesp) {
-        containerBlocosDesp.innerHTML = cabecalhoOficial + `
-            
-            <!-- NOVA MATRIZ FUNDEB 261/262 (Com a classe 'evitar-quebra-impressao') -->
-            <div class="evitar-quebra-impressao" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-                <div style="background-color: #f8fafc; padding: 16px 20px; border-bottom: 1px solid #e2e8f0;">
-                    <h3 style="margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 700;">Acompanhamento do FUNDEB (Vínculos 261.0000 e 262.0000)</h3>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                        <thead>
-                            <tr style="background-color: #ffffff; color: #475569; font-weight: bold; border-bottom: 1px solid #cbd5e1; text-align: center;">
-                                <th style="padding: 12px; border-right: 1px solid #e2e8f0;" colspan="2">VÍNCULO</th>
-                                <th style="padding: 12px; text-align: right;">EMPENHADO</th>
-                                <th style="padding: 12px; text-align: right;">LIQUIDADO</th>
-                                <th style="padding: 12px; text-align: right;">PAGO</th>
-                            </tr>
-                        </thead>
-                        <tbody style="font-family: 'Consolas', monospace; text-align: right;">
-                            
-                            <!-- Valores Absolutos -->
-                            <tr style="border-bottom: 1px solid #f1f5f9; color: #1e293b;">
-                                <td style="padding: 10px; border-right: 1px solid #e2e8f0; text-align: center;" colspan="2">02.261.0000</td>
-                                <td style="padding: 10px;">${formatarMoeda(despProc.infoVinculo261.empenhado)}</td>
-                                <td style="padding: 10px;">${formatarMoeda(despProc.infoVinculo261.liquidado)}</td>
-                                <td style="padding: 10px;">${formatarMoeda(despProc.infoVinculo261.pago)}</td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid #cbd5e1; color: #1e293b;">
-                                <td style="padding: 10px; border-right: 1px solid #e2e8f0; text-align: center;" colspan="2">02.262.0000</td>
-                                <td style="padding: 10px;">${formatarMoeda(despProc.infoVinculo262.empenhado)}</td>
-                                <td style="padding: 10px;">${formatarMoeda(despProc.infoVinculo262.liquidado)}</td>
-                                <td style="padding: 10px;">${formatarMoeda(despProc.infoVinculo262.pago)}</td>
-                            </tr>
-                            <tr style="background-color: #93c5fd; font-weight: bold; color: #1e3a8a; border-bottom: 1px solid #cbd5e1; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-                                <td style="padding: 10px; text-align: center; border-right: 1px solid #60a5fa;" colspan="2">TOTAL</td>
-                                <td style="padding: 10px;">${formatarMoeda(tFundebEmp)}</td>
-                                <td style="padding: 10px;">${formatarMoeda(tFundebLiq)}</td>
-                                <td style="padding: 10px;">${formatarMoeda(tFundebPag)}</td>
-                            </tr>
-                            
-                            <!-- Percentuais -->
-                            <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-                                <td rowspan="2" style="padding: 10px; font-weight: bold; color: #475569; vertical-align: middle; text-align: center; border-right: 1px solid #e2e8f0; width: 140px; font-family: 'Inter', sans-serif;">PERCENTUAL</td>
-                                <td style="padding: 10px; text-align: center; border-right: 1px solid #e2e8f0; font-family: 'Inter', sans-serif; font-weight: 600; color: #334155;">
-                                    261.0000 <br><span style="font-size: 11px; color: #64748b; font-weight: 500;">(Mínimo 70%)</span>
-                                </td>
-                                <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo261.empenhado))}</td>
-                                <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo261.liquidado))}</td>
-                                <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo261.pago))}</td>
-                            </tr>
-                            <tr style="background-color: #f8fafc; border-bottom: 1px solid #cbd5e1; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-                                <td style="padding: 10px; text-align: center; border-right: 1px solid #e2e8f0; font-family: 'Inter', sans-serif; font-weight: 600; color: #334155;">
-                                    262.0000 <br><span style="font-size: 11px; color: #64748b; font-weight: 500;">(Máximo 30%)</span>
-                                </td>
-                                <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo262.empenhado))}</td>
-                                <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo262.liquidado))}</td>
-                                <td style="padding: 10px; font-weight: bold; color: #1e293b;">${fmtPct(calcPct(despProc.infoVinculo262.pago))}</td>
-                            </tr>
-                            <tr style="background-color: #93c5fd; font-weight: bold; color: #1e3a8a; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-                                <td style="padding: 10px; text-align: center; border-right: 1px solid #60a5fa;" colspan="2">TOTAL</td>
-                                <td style="padding: 10px;">${fmtPct(calcPct(tFundebEmp))}</td>
-                                <td style="padding: 10px;">${fmtPct(calcPct(tFundebLiq))}</td>
-                                <td style="padding: 10px;">${fmtPct(calcPct(tFundebPag))}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- INJEÇÃO DA TABELA ETI AQUI -->
-            ${htmlDaTabelaETI}
-
-            <!-- CARD DO GRÁFICO DE DESPESAS (Com a classe 'evitar-quebra-impressao') -->
-            <div class="evitar-quebra-impressao" style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.03); display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-around;">
-                <div style="width: 100%; max-width: 450px; height: 250px;">
-                    <canvas id="chartDespesas"></canvas>
-                </div>
-                <div style="flex: 1; min-width: 300px; padding: 0 15px;">
-                    <h4 style="margin: 0 0 12px 0; color: #0f172a; font-size: 1.15rem;">Distribuição das Despesas (Valores Liquidados)</h4>
-                    <p style="color: #64748b; font-size: 0.9rem; line-height: 1.6; margin: 0;">Análise da alocação de recursos por subfunção educacional na Fonte 1.</p>
-                </div>
-            </div>
-
-            <!-- RESUMO DA APLICACAO OBRIGATORIA (Com a classe 'evitar-quebra-impressao') -->
-            <div class="evitar-quebra-impressao" style="background: #ffffff; border: 1px solid #e2e8f0; color: #0f172a; padding: 24px; border-radius: 16px; margin-bottom: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
-    <h3 style="margin: 0 0 20px 0; font-size: 15px; text-transform: uppercase; text-align: center; color: #475569; letter-spacing: 1px; font-weight: 700;">Resumo da Aplicação Obrigatória (25%)</h3>
-    <div style="display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-        
-        <!-- CARD EMPENHADO -->
-        <div style="flex: 1; min-width: 200px; text-align: center; background: #f8fafc; border: 1px solid #cbd5e1; padding: 16px; border-radius: 12px;">
-            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 8px; font-weight: 600;">Empenhado</div>
-            <div style="font-size: 15px; font-family: 'Consolas', monospace; color: #1e293b; margin-bottom: 4px; font-weight: 600;">${formatarMoeda(tEmp)}</div>
-            <div style="font-size: 24px; font-weight: 800; color: #0284c7;">${pEmp}%</div>
-        </div>
-        
-        <!-- CARD LIQUIDADO -->
-        <div style="flex: 1; min-width: 200px; text-align: center; background: #f8fafc; border: 1px solid #cbd5e1; padding: 16px; border-radius: 12px;">
-            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 8px; font-weight: 600;">Liquidado</div>
-            <div style="font-size: 15px; font-family: 'Consolas', monospace; color: #1e293b; margin-bottom: 4px; font-weight: 600;">${formatarMoeda(tLiq)}</div>
-            <div style="font-size: 24px; font-weight: 800; color: #059669;">${pLiq}%</div>
-        </div>
-        
-        <!-- CARD PAGO -->
-        <div style="flex: 1; min-width: 200px; text-align: center; background: #f8fafc; border: 1px solid #cbd5e1; padding: 16px; border-radius: 12px;">
-            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 8px; font-weight: 600;">Pago</div>
-            <div style="font-size: 15px; font-family: 'Consolas', monospace; color: #1e293b; margin-bottom: 4px; font-weight: 600;">${formatarMoeda(tPag)}</div>
-            <div style="font-size: 24px; font-weight: 800; color: #16a34a;">${pPag}%</div>
-        </div>
-        
-    </div>
-</div>
-
-            <div style="margin: 30px 0 16px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
-                <h4 style="margin: 0; color: #0f172a; font-size: 1.1rem;">Detalhamento por Função/Subfunção (Fonte 1)</h4>
-            </div>
-            ${gerarBlocoRelatorioDespesas('12.122 - Admin. Geral', despProc.info12122, '#3b82f6', '#eff6ff')}
-            ${gerarBlocoRelatorioDespesas('12.361 - Ensino Fund.', despProc.info12361, '#6366f1', '#eef2ff')}
-            ${gerarBlocoRelatorioDespesas('12.365 - Educ. Infantil', despProc.info12365, '#8b5cf6', '#f5f3ff')}
-            ${gerarBlocoRelatorioDespesas('12.367 - Educ. Especial', despProc.info12367, '#14b8a6', '#f0fdfa')}
-        `;
-    }
-
-    desenharGraficosDinamicos(recProc, despProc);
-}
-
-// ==========================================================================
-/* INJEÇÃO DA INTERFACE PRINCIPAL */
-// ==========================================================================
-document.getElementById('btn-processar').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-processar');
-    const inputReceitas = document.getElementById('csv-receitas').files[0];
-    const inputDespesas = document.getElementById('csv-despesas').files[0];
-
-    if (!inputReceitas || !inputDespesas) { alert('Por favor, selecione os dois arquivos antes de continuar.'); return; }
-
-    const textoOriginal = btn.innerHTML;
-    btn.innerHTML = "⏳ Processando...";
-    btn.disabled = true;
-
-    try {
-        const [textoReceitas, textoDespesas] = await Promise.all([lerArquivo(inputReceitas), lerArquivo(inputDespesas)]);
-        
-        // Mapeamentos exatos preservados do script original
-        const mapeamentoReceitas = { 'R': 'Nat.Despesa', 'K': 'Descrição', 'AB': 'Valor Receita' };
-        const mapeamentoDespesas = { 'BJ': 'Função/SubFunção', 'BW': 'Vínculo', 'AT': 'Fonte', 'L': 'Valor Empenhado', 'N': 'Valor Liquidado', 'P': 'Valor Pago' };
-
-        dadosGlobaisReceitas = converterCSVParaObjeto(textoReceitas, mapeamentoReceitas);
-        dadosGlobaisDespesas = converterCSVParaObjeto(textoDespesas, mapeamentoDespesas);
-
-        filtrosAplicados = {}; limiteReceitas = 50; limiteDespesas = 50;
-
-        const dashboard = document.getElementById('dashboard');
-        dashboard.classList.remove('hidden');
-        dashboard.style.cssText = "width: 100%; max-width: 1300px; margin: 0 auto; padding: 0; box-sizing: border-box;";
-
-        document.getElementById('resultado-status').innerHTML = `
-            <!-- Segmented Control para Abas Modernizado -->
-            <div style="background: #e2e8f0; padding: 6px; border-radius: 14px; display: flex; width: 100%; max-width: 450px; margin: 0 auto 32px auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);">
-                <button id="btn-tab-receitas" onclick="alternarAba('receitas')" style="flex: 1; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; text-align: center; border-radius: 10px; background: white; color: #0284c7; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-                    Receitas
-                </button>
-                <button id="btn-tab-despesas" onclick="alternarAba('despesas')" style="flex: 1; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; text-align: center; border-radius: 10px; background: transparent; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
-                    Despesas
-                </button>
-            </div>
-
-            <!-- MODULO DE RECEITAS -->
-            <div id="modulo-receitas" style="width: 100%; box-sizing: border-box; background: white; padding: 32px; border-radius: 16px; box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-                <div class="visao-controles" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-                    <div style="display: flex; gap: 8px; background: #f8fafc; padding: 4px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                        <button id="btn-visao-relatorio-rec" onclick="alternarVisaoReceitas('relatorio')" style="padding: 8px 16px; background-color: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">📊 Relatório Executivo</button>
-                        <button id="btn-visao-tabela-rec" onclick="alternarVisaoReceitas('tabela')" style="padding: 8px 16px; background-color: transparent; color: #64748b; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">📋 Base de Dados</button>
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button onclick="imprimirRelatorio()" style="padding: 8px 16px; background: white; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">🖨️ Imprimir</button>
-                        <button onclick="exportarReceitasXLSX(this)" style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);">⬇️ Excel (XLSX)</button>
-                        <button onclick="limparTodosFiltros()" style="padding: 8px 16px; background: #fee2e2; color: #dc2626; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">Limpar Filtros</button>
-                    </div>
-                </div>
-                <div id="container-blocos-receitas" style="display: block;"></div>
-                <div id="container-tabela-receitas-wrapper" style="display: none;"><div id="nova-tabela-receitas"></div></div>
-            </div>
-
-            <!-- MODULO DE DESPESAS -->
-            <div id="modulo-despesas" style="width: 100%; box-sizing: border-box; background: white; padding: 32px; border-radius: 16px; box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; display: none;">
-                <div class="visao-controles" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-                    <div style="display: flex; gap: 8px; background: #f8fafc; padding: 4px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                        <button id="btn-visao-relatorio-desp" onclick="alternarVisaoDespesas('relatorio')" style="padding: 8px 16px; background-color: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">📊 Relatório Executivo</button>
-                        <button id="btn-visao-tabela-desp" onclick="alternarVisaoDespesas('tabela')" style="padding: 8px 16px; background-color: transparent; color: #64748b; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">📋 Base de Dados</button>
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button onclick="imprimirRelatorio()" style="padding: 8px 16px; background: white; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">🖨️ Imprimir</button>
-                        <button onclick="exportarDespesasXLSX(this)" style="padding: 8px 16px; background: #0284c7; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2);">⬇️ Excel (XLSX)</button>
-                        <button onclick="limparTodosFiltros()" style="padding: 8px 16px; background: #fee2e2; color: #dc2626; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;">Limpar Filtros</button>
-                    </div>
-                </div>
-                <div id="container-blocos-despesas" style="display: block;"></div>
-                <div id="container-tabela-despesas-wrapper" style="display: none;"><div id="nova-tabela-despesas"></div></div>
-            </div>
-        `;
-	    
-            construirEstruturaTabelaBase(dadosGlobaisReceitas, 'nova-tabela-receitas', 'receitas');
-            construirEstruturaTabelaBase(dadosGlobaisDespesas, 'nova-tabela-despesas', 'despesas');
-            renderizarTabela();
-            
-            document.getElementById('upload-section').style.display = 'none';
-            alternarAba('receitas');
-
-        } catch (erro) {
-            console.error(erro);
-            alert(`Erro durante o processamento: ${erro.message}`);
-        } finally {
-            btn.innerHTML = textoOriginal;
-            btn.disabled = false;
-        }
-});
-
-// ============================================================================
-/* MÓDULO ISOLADO: FUNDEB ETI (Educação Tempo Integral) */
-// ============================================================================
-
-function processarTabelaETI(dados) {
-    let eti261 = { empenhado: 0, liquidado: 0, pago: 0 };
-    let eti262 = { empenhado: 0, liquidado: 0, pago: 0 };
-
-    dados.forEach(item => {
-        // Mapeamento defensivo garantindo a leitura da coluna BW ou nomes equivalentes
-        const vinculoBW = String(item['BW'] || item['Vínculo'] || item['CA Codigo'] || '').trim();
-        
-        const empenhado = limparEConverterNumero(item['L'] || item['Valor Empenhado']);
-        const liquidado = limparEConverterNumero(item['N'] || item['Valor Liquidado']);
-        const pago = limparEConverterNumero(item['P'] || item['Valor Pago']);
-
-        if (vinculoBW.includes('261.004') || vinculoBW.includes('261.0004')) {
-            eti261.empenhado += empenhado;
-            eti261.liquidado += liquidado;
-            eti261.pago += pago;
-        } else if (vinculoBW.includes('262.004') || vinculoBW.includes('262.0004')) {
-            eti262.empenhado += empenhado;
-            eti262.liquidado += liquidado;
-            eti262.pago += pago;
-        }
-    });
-
-    const totalETI = {
-        empenhado: eti261.empenhado + eti262.empenhado,
-        liquidado: eti261.liquidado + eti262.liquidado,
-        pago: eti261.pago + eti262.pago
-    };
-
-    return { eti261, eti262, totalETI };
-}
-
-    // ==========================================================================
-    /* FUNÇÃO AUXILIAR PARA FORMATAR EM REAIS (R$) */
-    // ==========================================================================
-function gerarHTMLTabelaETI(resultadosETI) {
-        const formatBRL = (valor) => {
-        const num = Number(valor) || 0;
-        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    };
-
-    // Adicionada classe 'evitar-quebra-impressao' ao bloco principal da Tabela ETI
-    let html = `
-    <div class="evitar-quebra-impressao" style="margin-bottom: 32px;"> 
-        <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 12px; text-transform: uppercase;">
-            FUNDEB - FOMENTO A MATRÍCULAS ETI (EDUCAÇÃO TEMPO INTEGRAL)
-        </h3>
-        <div class="detalhamento-container" style="margin-bottom: 0;">
-    `;
-
-    // ==========================================================================
-    /* PALETA DE CORES PARA INTERCALAR NOS CARDS */
-    // ==========================================================================
-    const temas = ['theme-blue', 'theme-purple', 'theme-green'];
-    let idxTema = 0;
-
-    let totalEmpenhado = 0;
-    let totalLiquidado = 0;
-    let totalPago = 0;
-
-    // ==========================================================================
-    /* CORREÇÃO: Filtrando 'TOTAL' e 'TOTALETI' para não gerar card em duplicidade */
-    // ==========================================================================
-    const chaves = Array.isArray(resultadosETI) 
-        ? resultadosETI 
-        : Object.keys(resultadosETI).filter(k => {
-            const chaveUpper = k.toUpperCase();
-            return chaveUpper !== 'TOTAL' && chaveUpper !== 'TOTALETI';
-        });
-
-    chaves.forEach(item => {
-        const codigo = typeof item === 'string' ? item : (item.codigo || item.vinculo);
-        const dados = typeof item === 'string' ? resultadosETI[item] : item;
-        
-        let codigoExibicao = codigo;
-        if (codigo.toLowerCase() === 'eti261') codigoExibicao = '05.261.0004';
-        if (codigo.toLowerCase() === 'eti262') codigoExibicao = '05.262.0004';
-        
-        const emp = dados.empenhado || dados.Empenhado || dados.L || 0;
-        const liq = dados.liquidado || dados.Liquidado || dados.N || 0;
-        const pag = dados.pago || dados.Pago || dados.P || 0;
-
-        totalEmpenhado += Number(emp);
-        totalLiquidado += Number(liq);
-        totalPago += Number(pag);
-
-        const tema = temas[idxTema % temas.length];
-        idxTema++;
-
-        html += `
-            <div class="detalhamento-card ${tema}">
-                <div class="detalhamento-label">
-                    ${codigoExibicao}
-                </div>
-                <div class="detalhamento-valores">
-                    <div class="detalhamento-item">
-                        <span class="detalhamento-item-titulo">Empenhado:</span>
-                        <span class="detalhamento-item-valor">${formatBRL(emp)}</span>
-                    </div>
-                    <div class="detalhamento-item">
-                        <span class="detalhamento-item-titulo">Liquidado:</span>
-                        <span class="detalhamento-item-valor">${formatBRL(liq)}</span>
-                    </div>
-                    <div class="detalhamento-item">
-                        <span class="detalhamento-item-titulo">Pago:</span>
-                        <span class="detalhamento-item-valor valor-destaque">${formatBRL(pag)}</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-
-    // ==========================================================================
-    /* INJETA O CARD FINAL DE TOTAL */
-    // ==========================================================================
-    html += `
-            <div class="detalhamento-card theme-total">
-                <div class="detalhamento-label" style="text-transform: uppercase;">
-                    TOTAL
-                </div>
-                <div class="detalhamento-valores">
-                    <div class="detalhamento-item">
-                        <span class="detalhamento-item-titulo">Empenhado:</span>
-                        <span class="detalhamento-item-valor">${formatBRL(totalEmpenhado)}</span>
-                    </div>
-                    <div class="detalhamento-item">
-                        <span class="detalhamento-item-titulo">Liquidado:</span>
-                        <span class="detalhamento-item-valor">${formatBRL(totalLiquidado)}</span>
-                    </div>
-                    <div class="detalhamento-item">
-                        <span class="detalhamento-item-titulo">Pago:</span>
-                        <span class="detalhamento-item-valor valor-destaque">${formatBRL(totalPago)}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    `;
-
-    return html;
-}
+document.addEventListener("DOMContentLoaded", () => SIOPEApp.init());
