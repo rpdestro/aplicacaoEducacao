@@ -26,17 +26,19 @@ O sistema processa arquivos CSV brutos (com dezenas de colunas e milhares de lin
 
 ## ✨ Estrutura:
 
-/
 
-├── index.html     # Esqueleto estrutural, sem CSS inline ou JS obstrusivo.
 
-├── style.css      # Cérebro visual, temas, grid system e regras.
+└── /aplicacaoEducacao
 
-├── script.js      # Motor encapsulado (SIOPEApp), gerenciando estado, lógica, UI e bibliotecas externas.
+&#x20;   ├── index.html	# Esqueleto estrutural, sem CSS inline ou JS obstrusivo.
 
-├── brasao.png     # Logotipo utilizado no cabeçalho dos relatórios oficiais.
+&#x20;   ├── style.css	# Cérebro visual, temas, grid system e regras.
 
-└── README.md      # Documentação do projeto.
+&#x20;   ├── script.js	# Motor encapsulado (SIOPEApp), gerenciando estado, lógica, UI e bibliotecas externas.
+
+&#x20;   ├── brasão.png	# Logotipo utilizado no cabeçalho dos relatórios oficiais.
+
+&#x20;   └── README.md	# Documentação do projeto.
 
 
 
@@ -48,7 +50,7 @@ renato.destro@gmail.com
 
 Auxiliar de Escritório / Prefeitura do Município de Botucatu/SP
 
-Sinta-se à vontade para contribuir, abrir issues ou enviar um pull request!
 
-Seja LIVRE, use Linux!
+
+###### Seja LIVRE, use Linux!
 
