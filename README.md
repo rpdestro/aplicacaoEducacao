@@ -1,12 +1,12 @@
 ## 📊 Módulo SIOPE/FUNDEB - Análise Consolidada (Receitas e Despesas):
 
-
+##
 
 Aplicação web desenvolvida para otimizar e automatizar a análise do orçamento público educacional FUNDEB - (Manutenção e Desenvolvimento do Ensino - Art. 212 da Constituição Federal). Originalmente projetado para o contexto do Departamento de Planejamento e Orçamento do município de Botucatu.
 
 O sistema processa arquivos CSV brutos (com dezenas de colunas e milhares de linhas) de forma 100% local no navegador (\*Client-Side\*), garantindo segurança total dos dados sensíveis e performance instantânea.
 
-
+##
 
 ## ✨ Principais Funcionalidades:
 
@@ -22,35 +22,29 @@ O sistema processa arquivos CSV brutos (com dezenas de colunas e milhares de lin
 
 \* XLSX (Excel): Exportação dos dados filtrados para planilhas limpas através da biblioteca `SheetJS`.
 
-
+##
 
 ## ✨ Estrutura:
 
+##
 
+```text
+      └── /aplicacaoEducacao
+\&#x20;   ├── index.html	# Esqueleto estrutural, sem CSS inline ou JS obstrusivo.
+\&#x20;   ├── style.css	# Cérebro visual, temas, grid system e regras.
+\&#x20;   ├── script.js	# Motor encapsulado (SIOPEApp), gerenciando estado, lógica, UI e bibliotecas externas.
+\&#x20;   ├── brasão.png	# Logotipo utilizado no cabeçalho dos relatórios oficiais.
+\&#x20;   └── README.md	# Documentação do projeto.
+```
 
-└── /aplicacaoEducacao
-
-&#x20;   ├── index.html	# Esqueleto estrutural, sem CSS inline ou JS obstrusivo.
-
-&#x20;   ├── style.css	# Cérebro visual, temas, grid system e regras.
-
-&#x20;   ├── script.js	# Motor encapsulado (SIOPEApp), gerenciando estado, lógica, UI e bibliotecas externas.
-
-&#x20;   ├── brasão.png	# Logotipo utilizado no cabeçalho dos relatórios oficiais.
-
-&#x20;   └── README.md	# Documentação do projeto.
-
-
+##
 
 ## 👨‍💻 Autor:
 
 Renato Pinheiro Destro
-
 renato.destro@gmail.com
+Auxiliar de Escritório / Prefeitura Municipal de Botucatu/SP
 
-Auxiliar de Escritório / Prefeitura do Município de Botucatu/SP
-
-
+##
 
 ###### Seja LIVRE, use Linux!
-
