@@ -1,12 +1,8 @@
 ## 📊 Módulo SIOPE/FUNDEB - Análise Consolidada (Receitas e Despesas):
 
-##
-
 Aplicação web desenvolvida para otimizar e automatizar a análise do orçamento público educacional FUNDEB - (Manutenção e Desenvolvimento do Ensino - Art. 212 da Constituição Federal). Originalmente projetado para o contexto do Departamento de Planejamento e Orçamento do município de Botucatu.
 
 O sistema processa arquivos CSV brutos (com dezenas de colunas e milhares de linhas) de forma 100% local no navegador (\*Client-Side\*), garantindo segurança total dos dados sensíveis e performance instantânea.
-
-##
 
 ## ✨ Principais Funcionalidades:
 
@@ -22,23 +18,17 @@ O sistema processa arquivos CSV brutos (com dezenas de colunas e milhares de lin
 
 \* XLSX (Excel): Exportação dos dados filtrados para planilhas limpas através da biblioteca `SheetJS`.
 
-##
-
 ## ✨ Estrutura:
-
-##
 
 ```text
 /aplicacaoEducacao
     ├── index.html	   # Esqueleto estrutural, sem CSS inline ou JS obstrusivo.
-    ├── style.css	      # Cérebro visual, temas, grid system e regras.
-    ├── script.js	      # Motor encapsulado (SIOPEApp), gerenciando estado, lógica, UI e bibliotecas
+    ├── style.css	   # Cérebro visual, temas, grid system e regras.
+    ├── script.js	   # Motor encapsulado (SIOPEApp), gerenciando estado, lógica, UI e bibliotecas
     ├                     externas.
     ├── brasão.png	   # Logotipo utilizado no cabeçalho dos relatórios oficiais.
-    └── README.md	      # Documentação do projeto.
+    └── README.md	   # Documentação do projeto.
 ```
-
-##
 
 ## 👨‍💻 Autor:
 
