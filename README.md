@@ -4,9 +4,11 @@ Aplicação web desenvolvida para otimizar e automatizar a análise do orçament
 
 O sistema processa arquivos CSV brutos (com dezenas de colunas e milhares de linhas) de forma 100% local no navegador (\*Client-Side\*), garantindo segurança total dos dados sensíveis e performance instantânea.
 
+Os dados são organizados em dois módulos (Receitas/Despesas), representados por tabelas e gráficos, formando um consolidado pronto para ser publicado em Diário Oficial.
+
 ## ✨ Principais Funcionalidades:
 
-\- Processamento Client-Side: Leitura e sanitização de arquivos CSV (Receitas e Despesas) diretamente no navegador, sem necessidade de back-end ou envio de dados para servidores.
+\- Processamento Client-Side: Leitura e sanitização de arquivos CSV, diretamente no navegador, sem a necessidade de back-end ou envio de dados para servidores.
 
 \- Arquitetura Modular: Código estruturado sob o \*Module Pattern\*, isolando o estado da aplicação (State), lógica de negócio (Core), eventos (Events) e interface (UI).
 
@@ -22,11 +24,12 @@ O sistema processa arquivos CSV brutos (com dezenas de colunas e milhares de lin
 
 ```text
 /aplicacaoEducacao
-    ├── index.html	   - Esqueleto estrutural, sem CSS inline ou JS obstrusivo;
-    ├── style.css	   - Cérebro visual, temas, grid system e regras;
-    ├── script.js	   - Motor encapsulado (SIOPEApp), gerenciando estado, lógica, UI e bibliotecas externas;
-    ├── brasão.png	   - Logotipo utilizado no cabeçalho dos relatórios oficiais;
-    └── README.md	   - Documentação do projeto.
+   │
+   ├── index.html   - Esqueleto estrutural, sem CSS inline ou JS obstrusivo;
+   ├── style.css    - Estrutura visual, temas, grid system e regras;
+   ├── script.js    - Motor encapsulado, gerenciando estado, lógica, UI e bibliotecas externas;
+   ├── brasão.png	- Logotipo utilizado no cabeçalho dos relatórios oficiais;
+   └── README.md	- Documentação do projeto.
 ```
 
 ## 👨‍💻 Autor:
