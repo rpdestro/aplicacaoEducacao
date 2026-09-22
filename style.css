@@ -111,8 +111,17 @@ body {
 .controls-actions { display: flex; gap: 8px; }
 .btn-action { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px;}
 
-.btn-pdf { background: #ef4444; color: white; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2); }
-.btn-pdf:hover { background: #dc2626; }
+/* --- BOTÃO DE RELATÓRIO (SPLIT-BUTTON: COMPLETO / SIMPLES) --- */
+.btn-relatorio-group { position: relative; display: flex; }
+.btn-relatorio-completo { background: #ef4444; color: white; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2); border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.btn-relatorio-completo:hover { background: #dc2626; }
+.btn-relatorio-caret { background: #ef4444; color: white; border: none; border-left: 1px solid rgba(255,255,255,0.35); padding: 8px 10px; border-top-right-radius: 8px; border-bottom-right-radius: 8px; cursor: pointer; font-size: 11px; }
+.btn-relatorio-caret:hover { background: #dc2626; }
+.relatorio-menu { position: absolute; top: 100%; right: 0; margin-top: 6px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 99999; min-width: 230px; overflow: hidden; }
+.relatorio-menu-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: left; background: none; border: none; padding: 10px 14px; font-size: 13px; font-weight: 600; color: #0f172a; cursor: pointer; }
+.relatorio-menu-item:hover { background: #f8fafc; }
+.relatorio-menu-item + .relatorio-menu-item { border-top: 1px solid #f1f5f9; }
+.relatorio-menu-sub { font-size: 11px; font-weight: 500; color: #64748b; }
 
 .btn-print { background: white; color: #0f172a; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 .btn-excel-rec { background: #10b981; color: white; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2); }
@@ -135,7 +144,7 @@ body {
 /* --- SEÇÃO DO GRÁFICO --- */
 .chart-section { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.03); display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-around; }
 .chart-canvas-wrapper { width: 100%; max-width: 450px; height: 250px; position: relative; } 
-.chart-info { flex: 1; min-width: 300px; padding: 0 15px; }
+.chart-info { flex: 1; min-width: 300px; padding: 0 15px; text-align: center; }
 .chart-info h4 { margin: 0 0 12px 0; color: #0f172a; font-size: 1.15rem; }
 .chart-info p { color: #64748b; font-size: 0.9rem; line-height: 1.6; margin: 0; }
 
@@ -195,14 +204,20 @@ body {
 .bloco-despesa-body { padding: 12px 20px; display: flex; justify-content: flex-end; align-items: center; gap: 24px; font-size: 14px; flex-grow: 1; background: white; }
 .bloco-despesa-item { color: #64748b; width: 220px; text-align: right; font-size: 13px; }
 .bloco-despesa-item strong { font-family: 'Consolas', monospace; font-size: 15px; }
+
+/* Variante para rótulos mais longos (ex.: módulo Saúde), que não cabem numa
+   única linha de 180px: título e subtítulo empilhados numa coluna mais larga. */
+.bloco-despesa-header.bloco-despesa-header-wide { width: 280px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; }
+.bloco-despesa-titulo { font-weight: 700; font-size: 14px; }
+.bloco-despesa-subtitulo { font-weight: 400; font-size: 11.5px; color: #64748b; line-height: 1.4; }
 .val-emp, .val-liq { color: #1e293b; }
 
 /* --- MATRIZ FUNDEB --- */
 .fundeb-matrix { background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-.fundeb-matrix-header { background-color: #f8fafc; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; }
+.fundeb-matrix-header { background-color: #f8fafc; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; text-align: center; }
 .fundeb-matrix-header h3 { margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 700; }
 .fundeb-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.fundeb-table th { background-color: #334155; color: #cbd5e1 !important; font-weight: bold; border-bottom: 1px solid #1e293b; text-align: center; padding: 12px; border-right: 1px solid #475569; }
+.fundeb-table th { background-color: #93c5fd; color: #1e3a8a !important; font-weight: bold; border-bottom: 1px solid #60a5fa; text-align: center; padding: 12px; border-right: 1px solid #60a5fa; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 .fundeb-table th.text-right { text-align: right; border-right: none; }
 .fundeb-table tbody { font-family: 'Consolas', monospace; text-align: right; }
 .fundeb-table td { padding: 10px; border-right: 1px solid #e2e8f0; }
@@ -300,8 +315,16 @@ body {
     #dashboard { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none !important; padding: 0 !important; margin: 0 !important; background: white !important;}
     
     .tabs-wrapper, .controls-bar, .btn-carregar-mais { display: none !important; }
+
+    /* Ao imprimir o Relatório Completo da Saúde, o painel de Educação
+       precisa ficar totalmente fora do fluxo — e não só oculto por
+       .hidden — porque a regra abaixo ("#modulo-receitas, #modulo-despesas")
+       força esses dois containers de Educação a ficarem visíveis durante
+       QUALQUER impressão, mesmo com a classe .hidden aplicada. display:none
+       no ancestral #conteudo-modulo-educacao os remove de vez do documento. */
+    body.imprimindo-saude #conteudo-modulo-educacao { display: none !important; }
     
-    /* Esta é a classe mágica que esconde os elementos indesejados no PDF */
+    /* Classe que esconde os elementos indesejados no PDF */
     .no-print { display: none !important; }
 
     #modulo-receitas, #modulo-despesas { 
@@ -319,7 +342,8 @@ body {
         break-after: avoid !important;
     }
     
-    tr, .bloco-relatorio, .bloco-despesa-row, .detalhamento-card, .chart-section, .fundeb-matrix { 
+    tr, .bloco-relatorio, .bloco-despesa-row, .detalhamento-card, .chart-section, .fundeb-matrix,
+    .resumo-card-container, .resumo-item, .official-header, .bar-total {
         page-break-inside: avoid !important; 
         break-inside: avoid !important; 
     }
@@ -328,4 +352,164 @@ body {
     
     canvas { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; max-width: 100% !important; }
     .select-referencia { appearance: none !important; -webkit-appearance: none !important; background: transparent !important; border: none !important; color: #0f172a !important; font-weight: 700 !important; padding: 0 !important; }
+
+    @page { size: A4; margin: 12mm; }
+
+    /* Quando o modo "Relatório Simples" está ativo, escondemos o dashboard
+       completo e mostramos apenas o container #relatorio-simples (1 página).
+       Importante: usar display:none (e não apenas visibility:hidden) no
+       dashboard, pois visibility:hidden mantém o espaço/altura do elemento
+       no fluxo do documento, o que gerava várias páginas em branco antes
+       do conteúdo do relatório simples ser impresso. */
+    body.modo-relatorio-simples #dashboard { display: none !important; }
+    body.modo-relatorio-simples #relatorio-simples {
+        display: block !important; visibility: visible !important;
+        /* Assim como o #dashboard acima, usamos position:absolute para tirar
+           este container do fluxo normal do documento. Com position:static,
+           ele herdava o espaço em branco reservado por .page-header e
+           #upload-section (que ficam com visibility:hidden, mas continuam
+           ocupando espaço no layout por não terem display:none), o que
+           empurrava todo o conteúdo para baixo e gerava a folha com uma
+           área vazia enorme no topo. */
+        position: absolute !important; left: 0 !important; top: 0 !important;
+        width: 100%;
+    }
+    body.modo-relatorio-simples #relatorio-simples * { visibility: visible !important; }
+
+    /* Evita cortar linhas/tabelas do relatório simples no meio, entre páginas */
+    body.modo-relatorio-simples .rs-tabela tr,
+    body.modo-relatorio-simples .rs-header,
+    body.modo-relatorio-simples .rs-bar,
+    body.modo-relatorio-simples .rs-subtitulo { page-break-inside: avoid !important; break-inside: avoid !important; }
+    body.modo-relatorio-simples .rs-secao,
+    body.modo-relatorio-simples .rs-bar { page-break-after: avoid !important; break-after: avoid !important; }
 }
+
+/* ==========================================================================
+   RELATÓRIO COMPLETO — VERSÃO COMPACTA (TELA DE PREPARO + IMPRESSÃO/PDF)
+   Reduz fontes, espaçamentos e sombras para um documento mais profissional.
+   Importante: esta classe é aplicada via JS (script.js) ANTES de chamar
+   window.print() — e só removida depois — em vez de depender só de
+   @media print. Isso é necessário porque os gráficos (Chart.js) precisam
+   medir e desenhar no tamanho final ENQUANTO a página ainda está rodando
+   normalmente; se o redimensionamento só acontecesse quando o navegador
+   já está no meio da impressão (que trava a thread principal), o Chart.js
+   não tinha tempo de concluir o redesenho e o gráfico saía deformado.
+   ========================================================================== */
+body.gerando-relatorio-completo .official-header,
+body.gerando-relatorio-completo .chart-section,
+body.gerando-relatorio-completo .bloco-relatorio,
+body.gerando-relatorio-completo .bloco-despesa-row,
+body.gerando-relatorio-completo .fundeb-matrix,
+body.gerando-relatorio-completo .detalhamento-card,
+body.gerando-relatorio-completo .resumo-card-container {
+    box-shadow: none !important;
+}
+
+body.gerando-relatorio-completo .official-header { padding: 12px 12px !important; margin-bottom: 10px !important; }
+body.gerando-relatorio-completo .official-header-logo { height: 55px !important; margin-bottom: 8px !important; }
+body.gerando-relatorio-completo .official-header-title { font-size: 0.95rem !important; }
+body.gerando-relatorio-completo .official-header-sub { font-size: 0.8rem !important; margin-bottom: 3px !important; }
+body.gerando-relatorio-completo .official-header-desc { font-size: 0.72rem !important; margin-bottom: 10px !important; }
+body.gerando-relatorio-completo .badge-ref, body.gerando-relatorio-completo .badge-lei { font-size: 10px !important; padding: 4px 10px !important; }
+body.gerando-relatorio-completo .select-referencia { font-size: 10px !important; }
+
+body.gerando-relatorio-completo .chart-section { padding: 10px 14px !important; margin-bottom: 10px !important; gap: 8px !important; }
+/* Quadrado de propósito: uma caixa retangular (ex.: 240x170) pode fazer o
+   Chart.js reservar espaço para a legenda de um jeito levemente assimétrico
+   entre largura e altura, o que faz o anel (doughnut) sair como uma elipse
+   sutil em vez de um círculo perfeito. Uma caixa quadrada elimina essa
+   ambiguidade. */
+body.gerando-relatorio-completo .chart-canvas-wrapper { width: 300px !important; max-width: 300px !important; height: 300px !important; overflow: hidden; }
+body.gerando-relatorio-completo .chart-info { min-width: 180px !important; padding: 0 6px !important; }
+body.gerando-relatorio-completo .chart-info h4 { font-size: 11px !important; margin: 0 0 4px 0 !important; }
+body.gerando-relatorio-completo .chart-info p { font-size: 9px !important; line-height: 1.35 !important; }
+
+body.gerando-relatorio-completo .section-separator { margin: 14px 0 8px 0 !important; padding-bottom: 4px !important; }
+body.gerando-relatorio-completo .section-separator h4 { font-size: 0.85rem !important; }
+
+body.gerando-relatorio-completo .bloco-relatorio { margin-bottom: 8px !important; border-radius: 6px !important; }
+body.gerando-relatorio-completo .bloco-cabecalho { padding: 6px 10px !important; }
+body.gerando-relatorio-completo .bloco-title { font-size: 10.5px !important; }
+body.gerando-relatorio-completo .bloco-value { font-size: 11.5px !important; }
+body.gerando-relatorio-completo .table-lancamentos td { padding: 3px 10px !important; font-size: 9.5px !important; }
+body.gerando-relatorio-completo .col-empty { padding: 6px !important; font-size: 9.5px !important; }
+
+body.gerando-relatorio-completo .bar-total { padding: 7px 12px !important; margin-bottom: 8px !important; border-radius: 6px !important; }
+body.gerando-relatorio-completo .bar-total-label { font-size: 10.5px !important; }
+body.gerando-relatorio-completo .bar-total-value { font-size: 12px !important; }
+
+body.gerando-relatorio-completo .bloco-despesa-row { margin-bottom: 6px !important; border-radius: 6px !important; }
+body.gerando-relatorio-completo .bloco-despesa-header { padding: 6px 10px !important; font-size: 10.5px !important; width: 130px !important; }
+body.gerando-relatorio-completo .bloco-despesa-header.bloco-despesa-header-wide { width: 130px !important; } /* Ajustado para evitar corte no print */
+body.gerando-relatorio-completo .bloco-despesa-titulo { font-size: 10.5px !important; }
+body.gerando-relatorio-completo .bloco-despesa-subtitulo { font-size: 9px !important; }
+body.gerando-relatorio-completo .bloco-despesa-body { padding: 5px 10px !important; font-size: 10.5px !important; gap: 12px !important; }
+body.gerando-relatorio-completo .bloco-despesa-item { flex: 1 !important; width: auto !important; font-size: 9.5px !important; }
+body.gerando-relatorio-completo .bloco-despesa-item strong { font-size: 10.5px !important; }
+
+body.gerando-relatorio-completo .fundeb-matrix { margin-bottom: 10px !important; border-radius: 6px !important; }
+body.gerando-relatorio-completo .fundeb-matrix-header { padding: 8px 12px !important; }
+body.gerando-relatorio-completo .fundeb-matrix-header h3 { font-size: 11.5px !important; }
+body.gerando-relatorio-completo .fundeb-table th { padding: 5px !important; font-size: 9.5px !important; }
+body.gerando-relatorio-completo .fundeb-table td { padding: 5px !important; font-size: 9.5px !important; }
+body.gerando-relatorio-completo .pct-desc span { font-size: 8.5px !important; }
+
+body.gerando-relatorio-completo .detalhamento-container { gap: 6px !important; margin-top: 8px !important; margin-bottom: 10px !important; }
+body.gerando-relatorio-completo .detalhamento-card { border-radius: 6px !important; }
+body.gerando-relatorio-completo .detalhamento-label { padding: 6px 10px !important; font-size: 10.5px !important; width: 130px !important; }
+body.gerando-relatorio-completo .detalhamento-valores { padding: 5px 10px !important; gap: 12px !important; }
+body.gerando-relatorio-completo .detalhamento-item { flex: 1 !important; width: auto !important; }
+body.gerando-relatorio-completo .detalhamento-item-titulo { font-size: 9px !important; margin-bottom: 2px !important; }
+body.gerando-relatorio-completo .detalhamento-item-valor { font-size: 10.5px !important; }
+
+body.gerando-relatorio-completo .resumo-card-container { padding: 10px !important; margin-bottom: 10px !important; border-radius: 6px !important; }
+body.gerando-relatorio-completo .resumo-card-container h3 { font-size: 10.5px !important; margin-bottom: 8px !important; }
+body.gerando-relatorio-completo .resumo-item { padding: 8px !important; border-radius: 6px !important; }
+body.gerando-relatorio-completo .resumo-item-title { font-size: 9px !important; margin-bottom: 4px !important; }
+body.gerando-relatorio-completo .resumo-item-val { font-size: 10.5px !important; }
+body.gerando-relatorio-completo .resumo-item-pct { font-size: 15px !important; }
+
+/* Trava extra: caso algo saia do tamanho esperado, o gráfico fica
+   contido dentro da própria caixa */
+.chart-canvas-wrapper { overflow: hidden; }
+
+/* ==========================================================================
+   RELATÓRIO SIMPLES — FICHA NO PADRÃO OFICIAL (REF / EDUCAÇÃO 25% / FUNDEB)
+   ========================================================================== */
+#relatorio-simples { display: none; }
+
+.rs-doc { border: 1.5px solid #0f172a; font-family: 'Inter', Arial, sans-serif; color: #0f172a; }
+
+.rs-header { display: flex; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 10px 12px 8px 12px; border-bottom: 1.5px solid #0f172a; }
+.rs-logo { height: 46px; width: auto; object-fit: contain; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.rs-header-text h2 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.2px; }
+.rs-header-text h3 { margin: 2px 0 0 0; font-size: 11.5px; font-weight: 600; }
+.rs-header-text p { margin: 2px 0 0 0; font-size: 10px; color: #334155; }
+
+.rs-bar { background: #1e293b !important; color: #fff !important; text-align: center; font-weight: 700; font-size: 11px; letter-spacing: 0.5px; padding: 4px 6px; border-bottom: 1px solid #0f172a; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+.rs-bar-grande { font-size: 14px; padding: 6px 6px; }
+
+.rs-subtitulo { text-align: center; font-style: italic; font-weight: 600; font-size: 10.5px; padding: 6px 6px; border-bottom: 1.5px solid #0f172a; line-height: 1.5; }
+
+.rs-secao { background: #cbd5e1 !important; font-weight: 700; font-size: 10.5px; padding: 4px 8px; border-bottom: 1px solid #0f172a; text-transform: uppercase; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+.rs-tabela { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+.rs-tabela:not(:last-child) { border-bottom: 1.5px solid #0f172a; }
+.rs-tabela td { padding: 2.5px 8px; border-bottom: 1px solid #cbd5e1; border-right: 1px solid #e2e8f0; vertical-align: middle; }
+.rs-tabela td:last-child { border-right: none; }
+.rs-tabela td.rs-cod { font-family: 'Consolas', monospace; font-size: 9px; color: #475569; white-space: nowrap; width: 150px; }
+.rs-tabela td.rs-val { text-align: right; font-family: 'Consolas', monospace; font-weight: 600; white-space: nowrap; width: 110px; }
+
+.rs-grupo td { font-style: italic; font-weight: 700; text-align: center; background: #f1f5f9 !important; border-top: 1px solid #0f172a; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+.rs-total td { font-weight: 700; background: #e2e8f0 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+.rs-total-escuro td { background: #94a3b8 !important; color: #0f172a; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+.rs-formula td { font-style: italic; }
+.rs-pct td { background: #f8fafc !important; font-weight: 700; text-align: right; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+.rs-pct td:first-child { text-align: left; font-style: normal; }
+.rs-pct-total td { background: #e2e8f0 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+.rs-cabecalho-col td { background: #334155 !important; color: #fff !important; font-weight: 700; text-align: center; font-size: 9px; text-transform: uppercase; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+.rs-tabela-3col td.rs-val, .rs-tabela-3col td:not(:first-child) { text-align: right; font-family: 'Consolas', monospace; }
+
+.rs-footer { font-size: 8px; color: #64748b; text-align: center; padding: 5px; }

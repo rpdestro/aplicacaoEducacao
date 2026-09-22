@@ -14,7 +14,7 @@
     <div class="page-header">
         <span class="version-badge">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            Módulo SIOPE - V2.3
+            Prestação de Contas - V3.0
         </span>
         <h2 class="page-title">Departamento de Planejamento e Orçamento</h2>
         <p class="page-subtitle">Análise consolidada de <strong>Receitas</strong> e <strong>Despesas</strong></p>
@@ -86,7 +86,19 @@
 
     <!-- DASHBOARD -->
     <div id="dashboard" class="dashboard-panel hidden">
-        
+
+        <!-- SELETOR DE MÓDULO: Educação e Saúde usam os MESMOS CSVs de
+             Receita/Despesa carregados acima; cada módulo só aplica sua
+             própria regra de cálculo sobre essa mesma base. Reaproveita
+             visualmente as classes .tabs-wrapper/.tab-btn já existentes. -->
+        <div class="tabs-wrapper modulo-switch">
+            <button id="btn-modulo-educacao" class="tab-btn active">📚  MÓDULO EDUCAÇÃO</button>
+            <button id="btn-modulo-saude" class="tab-btn">🏥  MÓDULO SAÚDE</button>
+        </div>
+
+        <!-- ==================== MÓDULO EDUCAÇÃO (conteúdo original, inalterado) ==================== -->
+        <div id="conteudo-modulo-educacao">
+
         <div class="tabs-wrapper">
             <button id="btn-tab-receitas" class="tab-btn active">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
@@ -106,7 +118,14 @@
                     <button id="btn-visao-tabela-rec" class="btn-view">📋 Base de Dados</button>
                 </div>
                 <div class="controls-actions">
-                    <button class="btn-action btn-pdf">📄 Gerar PDF</button>
+                    <div class="btn-relatorio-group">
+                        <button class="btn-action btn-relatorio-completo" data-relatorio="completo">📄 Gerar Relatório Completo</button>
+                        <button class="btn-relatorio-caret" data-action="toggle-relatorio-menu" aria-label="Mais opções de relatório" aria-haspopup="true" aria-expanded="false">▾</button>
+                        <div class="relatorio-menu hidden">
+                            <button class="relatorio-menu-item" data-relatorio="completo">📄 Relatório Completo<span class="relatorio-menu-sub">Com gráficos • todas as seções</span></button>
+                            <button class="relatorio-menu-item" data-relatorio="simples">📝 Relatório Simples<span class="relatorio-menu-sub">1 página A4 • sem gráficos</span></button>
+                        </div>
+                    </div>
                     <button class="btn-action btn-print">🖨️ Imprimir</button>
                     <button class="btn-action btn-excel-rec">⬇️ Excel</button>
                     <button class="btn-action btn-clear">Limpar Filtros</button>
@@ -276,7 +295,14 @@
                     <button id="btn-visao-tabela-desp" class="btn-view">📋 Base de Dados</button>
                 </div>
                 <div class="controls-actions">
-                    <button class="btn-action btn-pdf">📄 Gerar PDF</button>
+                    <div class="btn-relatorio-group">
+                        <button class="btn-action btn-relatorio-completo" data-relatorio="completo">📄 Gerar Relatório Completo</button>
+                        <button class="btn-relatorio-caret" data-action="toggle-relatorio-menu" aria-label="Mais opções de relatório" aria-haspopup="true" aria-expanded="false">▾</button>
+                        <div class="relatorio-menu hidden">
+                            <button class="relatorio-menu-item" data-relatorio="completo">📄 Relatório Completo<span class="relatorio-menu-sub">Com gráficos • todas as seções</span></button>
+                            <button class="relatorio-menu-item" data-relatorio="simples">📝 Relatório Simples<span class="relatorio-menu-sub">1 página A4 • sem gráficos</span></button>
+                        </div>
+                    </div>
                     <button class="btn-action btn-print">🖨️ Imprimir</button>
                     <button class="btn-action btn-excel-desp">⬇️ Excel</button>
                     <button class="btn-action btn-clear">Limpar Filtros</button>
@@ -482,7 +508,171 @@
                 <button id="container_btn_mais_despesas" class="btn-carregar-mais">Carregar mais 50 registros...</button>
             </div>
         </div>
+
+        </div> <!-- /conteudo-modulo-educacao -->
+
+        <!-- ==================== MÓDULO SAÚDE (LC 141/2012) ====================
+             Painel único (sem sub-abas Receitas/Despesas): o Demonstrativo
+             oficial da Saúde é, por natureza, um documento único que já
+             combina impostos/transferências e despesas na mesma página —
+             por isso o relatório aqui segue o mesmo formato. A tabela
+             detalhada de lançamentos (CSV completo) não é duplicada aqui:
+             ela já está disponível em Educação → Despesas → Base de Dados,
+             pois é exatamente a mesma fonte de dados. -->
+        <div id="conteudo-modulo-saude" class="dashboard-module hidden">
+
+            <div class="controls-bar" data-modulo="saude">
+                <div class="controls-group-bg">
+                    <span style="padding: 8px 16px; font-size: 13px; color: #64748b; font-weight: 600;">📊 Relatório Executivo</span>
+                </div>
+                <div class="controls-actions">
+                    <div class="btn-relatorio-group">
+                        <button class="btn-action btn-relatorio-completo" data-relatorio="completo">📄 Gerar Relatório Completo</button>
+                        <button class="btn-relatorio-caret" data-action="toggle-relatorio-menu" aria-label="Mais opções de relatório" aria-haspopup="true" aria-expanded="false">▾</button>
+                        <div class="relatorio-menu hidden">
+                            <button class="relatorio-menu-item" data-relatorio="completo">📄 Relatório Completo<span class="relatorio-menu-sub">Com gráfico • todas as seções</span></button>
+                            <button class="relatorio-menu-item" data-relatorio="simples">📝 Relatório Simples<span class="relatorio-menu-sub">1 página A4 • padrão Diário Oficial</span></button>
+                        </div>
+                    </div>
+                    <button class="btn-action btn-print">🖨️ Imprimir</button>
+                </div>
+            </div>
+
+            <div class="official-header">
+                <div class="official-header-top"></div>
+                <img src="./brasao.png" alt="Brasão" class="official-header-logo">
+                <h2 class="official-header-title">PREFEITURA MUNICIPAL DE BOTUCATU</h2>
+                <h3 class="official-header-sub">SECRETARIA DE GOVERNO</h3>
+                <p class="official-header-desc">Departamento de Planejamento e Orçamento</p>
+                <div class="badges-container">
+                    <div class="badge-ref">
+                        Referência: 
+                        <select class="select-referencia">
+                            <optgroup label="Mensal"><option value="M" class="opt-mensal">MES/ANO</option></optgroup>
+                            <optgroup label="Bimestral (RREO)">
+                                <option value="B1" class="opt-ano">1º BIMESTRE / {ano}</option>
+                                <option value="B2" class="opt-ano">2º BIMESTRE / {ano}</option>
+                                <option value="B3" class="opt-ano">3º BIMESTRE / {ano}</option>
+                                <option value="B4" class="opt-ano">4º BIMESTRE / {ano}</option>
+                                <option value="B5" class="opt-ano">5º BIMESTRE / {ano}</option>
+                                <option value="B6" class="opt-ano">6º BIMESTRE / {ano}</option>
+                            </optgroup>
+                            <optgroup label="Trimestral">
+                                <option value="T1" class="opt-ano">1º TRIMESTRE / {ano}</option>
+                                <option value="T2" class="opt-ano">2º TRIMESTRE / {ano}</option>
+                                <option value="T3" class="opt-ano">3º TRIMESTRE / {ano}</option>
+                                <option value="T4" class="opt-ano">4º TRIMESTRE / {ano}</option>
+                            </optgroup>
+                            <optgroup label="Quadrimestral (RGF)">
+                                <option value="Q1" class="opt-ano">1º QUADRIMESTRE / {ano}</option>
+                                <option value="Q2" class="opt-ano">2º QUADRIMESTRE / {ano}</option>
+                                <option value="Q3" class="opt-ano">3º QUADRIMESTRE / {ano}</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="badge-lei">Ações e Serviços Públicos em Saúde (LC 141/2012)</div>
+                </div>
+            </div>
+
+            <div class="section-separator">
+                <h4>Impostos e Transferências</h4>
+            </div>
+
+            <div class="bloco-relatorio theme-green-light">
+                <div class="bloco-cabecalho">
+                    <span class="bloco-title">MUNICIPAL <span class="no-print">(Col. R: 1112, 1113, 1114)</span></span>
+                    <span id="saude-mun-val" class="bloco-value">R$ 0,00</span>
+                </div>
+                <div class="table-responsive"><table class="table-lancamentos"><tbody id="saude-mun-tbd"></tbody></table></div>
+            </div>
+
+            <div class="bloco-relatorio theme-emerald">
+                <div class="bloco-cabecalho">
+                    <span class="bloco-title">UNIÃO - FPM <span class="no-print">(Col. R: 1711.51.1.1.00.00)</span></span>
+                    <span id="saude-uni-val" class="bloco-value">R$ 0,00</span>
+                </div>
+                <div class="table-responsive"><table class="table-lancamentos"><tbody id="saude-uni-tbd"></tbody></table></div>
+            </div>
+
+            <div class="bloco-relatorio theme-teal-light">
+                <div class="bloco-cabecalho">
+                    <span class="bloco-title">ESTADO <span class="no-print">(Col. R: 1721.50, .51, .52)</span></span>
+                    <span id="saude-est-val" class="bloco-value">R$ 0,00</span>
+                </div>
+                <div class="table-responsive"><table class="table-lancamentos"><tbody id="saude-est-tbd"></tbody></table></div>
+            </div>
+
+            <div class="bar-total bar-total-dark">
+                <span class="bar-total-label">TOTAL DE IMPOSTOS E TRANSFERÊNCIAS</span>
+                <span id="saude-tot-imp-val" class="bar-total-value">R$ 0,00</span>
+            </div>
+
+            <div class="chart-section evitar-quebra-impressao">
+                <div class="chart-canvas-wrapper"><canvas id="chartSaude"></canvas></div>
+                <div class="chart-info">
+                    <h4 class="chart-info-title">Composição da Receita Vinculada à Saúde</h4>
+                    <p class="chart-info-desc">Distribuição percentual entre Municipal, União (FPM) e Estado no período.</p>
+                </div>
+            </div>
+
+            <div class="resumo-card-container evitar-quebra-impressao">
+                <h3>Aplicação Mínima Obrigatória (Art. 198, §2º, III - CF)</h3>
+                <div class="resumo-grid">
+                    <div class="resumo-item">
+                        <div class="resumo-item-title">Aplicação Obrigatória - 15% (A)</div>
+                        <div id="saude-apl-obr-val" class="resumo-item-val">R$ 0,00</div>
+                    </div>
+                    <div class="resumo-item">
+                        <div class="resumo-item-title">Rendimento de Aplicação Financeira (B)</div>
+                        <div id="saude-rend-val" class="resumo-item-val">R$ 0,00</div>
+                    </div>
+                    <div class="resumo-item">
+                        <div class="resumo-item-title">Aplicação Mínima Obrigatória (A) + (B)</div>
+                        <div id="saude-apl-min-val" class="resumo-item-val" style="font-size: 18px; font-weight: 800; color: #e11d48;">R$ 0,00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-separator">
+                <h4>Despesas Consideradas na Aplicação Obrigatória</h4>
+            </div>
+
+            <div class="bloco-despesa-row theme-blue">
+                <div class="bloco-despesa-header bloco-despesa-header-wide">
+                    <span class="bloco-despesa-titulo">SAÚDE GERAL</span>
+                    <span class="bloco-despesa-subtitulo no-print">Órgão 0206 • Fonte 01 • Vínculo 310.0000</span>
+                </div>
+                <div class="bloco-despesa-body">
+                    <div class="bloco-despesa-item">Empenhado: <br><strong id="saude-desp-emp-val" class="val-emp">R$ 0,00</strong></div>
+                    <div class="bloco-despesa-item">Liquidado: <br><strong id="saude-desp-liq-val" class="val-liq">R$ 0,00</strong></div>
+                    <div class="bloco-despesa-item">Pago: <br><strong id="saude-desp-pag-val" class="bloco-value">R$ 0,00</strong></div>
+                </div>
+            </div>
+
+            <div class="resumo-card-container evitar-quebra-impressao">
+                <h3>Percentual de Aplicação em Ações e Serviços Públicos de Saúde</h3>
+                <div class="resumo-grid">
+                    <div class="resumo-item">
+                        <div class="resumo-item-title">Empenhado</div>
+                        <div id="saude-pct-emp" class="resumo-item-pct pct-blue">0,00%</div>
+                    </div>
+                    <div class="resumo-item">
+                        <div class="resumo-item-title">Liquidado</div>
+                        <div id="saude-pct-liq" class="resumo-item-pct pct-green-dark">0,00%</div>
+                    </div>
+                    <div class="resumo-item">
+                        <div class="resumo-item-title">Pago</div>
+                        <div id="saude-pct-pag" class="resumo-item-pct pct-green">0,00%</div>
+                    </div>
+                </div>
+            </div>
+
+        </div> <!-- /conteudo-modulo-saude -->
+
     </div>
+
+    <!-- CONTAINER DO RELATÓRIO SIMPLES (usado apenas na hora de gerar o PDF de 1 página) -->
+    <div id="relatorio-simples"></div>
 
     <script src="script.js"></script>
 </body>
