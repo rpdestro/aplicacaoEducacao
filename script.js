@@ -72,7 +72,7 @@ const SIOPEApp = {
         '9510.00.0.0.00.05': 'COTA-PARTE - IPI',
 	    '1321.01.1.1.02.06': 'RENDIMENTO DE APLICAÇÃO FINANCEIRA - FUNDEB',
 	    '1751.50.0.1.00.00': 'TRANSFERÊNCIA DE RECURSOS FNDE FUNDEB - PRINCIPAL',
-	    '1715.53.0.1.01.00': 'TRANSFERÊNCIA DE RECURSOS FUNDEB DENTINADOS À CRIAÇÃO DE MATRÍCULAS DO ENSINO TÉCNICO',
+	    '1715.53.0.1.01.00': 'TRANSFERÊNCIA DE RECURSOS FUNDEB DESTINADOS À CRIAÇÃO DE MATRÍCULAS - ETI',
 	    '1321.01.1.1.02.01': 'SALÁRIO EDUCAÇÃO',
 	    '1321.01.1.1.02.02': 'MERENDA ESCOLAR - ESTADO',
 	    '1321.01.1.1.02.04': 'PNAE - PROGRAMA NACIONAL DE ALIMENTAÇÃO ESCOLAR',
@@ -537,7 +537,7 @@ const SIOPEApp = {
             const cxR = document.getElementById('chartReceitas');
             if(cxR && cxR.offsetParent !== null) { 
                 if(SIOPEApp.state.chartRecInst) SIOPEApp.state.chartRecInst.destroy();
-                SIOPEApp.state.chartRecInst = new Chart(cxR, { type: 'doughnut', data: { labels: ['Municipal', 'União', 'Estado', 'Fundeb', 'Adicionais'], datasets: [{ data: [rp.mun.t, rp.uniao.t, rp.est.t, rp.fun.t, (rp.aplFin.t + rp.fnde.t + rp.estTra.t + rp.funET.t)], backgroundColor: ['#10b981', '#059669', '#34d399', '#0ea5e9', '#6366f1'], borderWidth: 0 }] }, options: { maintainAspectRatio: false, animation: false, devicePixelRatio: Math.max(window.devicePixelRatio || 1, 3), plugins: { legend: { position: 'right' } }, cutout: '65%' } });
+                SIOPEApp.state.chartRecInst = new Chart(cxR, { type: 'doughnut', data: { labels: ['Municipal', 'União', 'Estado', 'Fundeb', 'Adicionais'], datasets: [{ data: [rp.mun.t, rp.uniao.t, rp.est.t, rp.fun.t, (rp.aplFin.t + rp.fnde.t + rp.estTra.t)], backgroundColor: ['#10b981', '#059669', '#34d399', '#0ea5e9', '#6366f1'], borderWidth: 0 }] }, options: { maintainAspectRatio: false, animation: false, devicePixelRatio: Math.max(window.devicePixelRatio || 1, 3), plugins: { legend: { position: 'right' } }, cutout: '65%' } });
             }
             
             const cxD = document.getElementById('chartDespesas');
@@ -865,6 +865,12 @@ const SIOPEApp = {
                     </table>
 
                     <div class="rs-secao">FUNDEB - FOMENTO A MATRÍCULAS ETI (VÍNCULOS 261.0004 / 262.0004)</div>
+                    <!-- Receita ETI: apenas informativa (não soma em nenhum total do relatório) -->
+                    <table class="rs-tabela">
+                        <tr class="rs-grupo"><td colspan="3">RECEITA</td></tr>
+                        ${linhasItens(rp.funET.i)}
+                        <tr class="rs-total"><td colspan="2">TOTAL RECEITA ETI</td><td class="rs-val">${fmt(rp.funET.t)}</td></tr>
+                    </table>
                     <table class="rs-tabela rs-tabela-3col">
                         <tr class="rs-cabecalho-col"><td>VÍNCULO</td><td>EMPENHADO</td><td>LIQUIDADO</td><td>PAGO</td></tr>
                         <tr><td>05.261.0004</td><td class="rs-val">${fmt(eti.e261.e)}</td><td class="rs-val">${fmt(eti.e261.l)}</td><td class="rs-val">${fmt(eti.e261.p)}</td></tr>
