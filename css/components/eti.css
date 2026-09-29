@@ -1,0 +1,28 @@
+/* ==========================================================================
+   FUNDEB - ETI (EDUCAÇÃO TEMPO INTEGRAL)
+   Título da seção e cards de detalhamento por vínculo.
+   ========================================================================== */
+/* Título das seções ETI (antes estilo inline repetido no HTML) */
+.titulo-eti { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 12px; text-transform: uppercase; }
+.bloco-eti-receita { margin-top: 32px; }
+.bloco-eti-despesa { margin-bottom: 32px; }
+
+.detalhamento-container { display: flex; flex-direction: column; gap: 16px; margin-top: 15px; margin-bottom: 30px; }
+.detalhamento-container--sem-margem { margin-bottom: 0; }
+.detalhamento-card { display: flex; align-items: stretch; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px -1px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; page-break-inside: avoid; }
+.detalhamento-card:hover { transform: scale(1.005); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+.detalhamento-label { width: 180px; flex-shrink: 0; padding: 16px 20px; display: flex; align-items: center; font-weight: 600; font-size: 14px; border-left: 4px solid; border-right: 1px solid #e2e8f0; }
+.detalhamento-valores { display: flex; flex-grow: 1; justify-content: flex-end; align-items: center; padding: 12px 20px; gap: 24px; }
+.detalhamento-item { display: flex; flex-direction: column; text-align: right; width: 220px; }
+.detalhamento-item-titulo { font-size: 13px; color: #64748b; margin-bottom: 4px; }
+.detalhamento-item-valor { font-family: 'Consolas', monospace; font-size: 15px; font-weight: 600; color: #0f172a; }
+.valor-destaque { font-weight: 700; color: #0284c7; }
+
+/* Temas de Cores dos Cards ETI */
+.theme-blue .detalhamento-label { border-left-color: #3b82f6; background-color: #eff6ff; color: #1e3a8a; }
+.theme-blue .valor-destaque { color: #3b82f6; }
+.theme-purple .detalhamento-label { border-left-color: #8b5cf6; background-color: #f5f3ff; color: #4c1d95; }
+.theme-purple .valor-destaque { color: #8b5cf6; }
+.theme-total .detalhamento-label { border-left-color: #475569; background-color: #f8fafc; color: #0f172a; }
+.theme-total .valor-destaque { color: #0f172a; }
+.detalhamento-label--maiusculo { text-transform: uppercase; }

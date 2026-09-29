@@ -1,0 +1,31 @@
+/* ==========================================================================
+   BARRA DE CONTROLES
+   Alternância Relatório/Base de Dados, split-button de relatório e botões de ação.
+   ========================================================================== */
+.controls-bar { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+.controls-group-bg { display: flex; gap: 8px; background: #f8fafc; padding: 4px; border-radius: 8px; border: 1px solid #e2e8f0; }
+.btn-view { padding: 8px 16px; background-color: transparent; color: #64748b; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+.btn-view.active { background-color: #f1f5f9; color: #0f172a; border-color: #cbd5e1; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
+.controls-actions { display: flex; gap: 8px; }
+.btn-action { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px;}
+
+/* --- BOTÃO DE RELATÓRIO (SPLIT-BUTTON: COMPLETO / SIMPLES) --- */
+.btn-relatorio-group { position: relative; display: flex; }
+.btn-relatorio-completo { background: #ef4444; color: white; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2); border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.btn-relatorio-completo:hover { background: #dc2626; }
+.btn-relatorio-caret { background: #ef4444; color: white; border: none; border-left: 1px solid rgba(255,255,255,0.35); padding: 8px 10px; border-top-right-radius: 8px; border-bottom-right-radius: 8px; cursor: pointer; font-size: 11px; }
+.btn-relatorio-caret:hover { background: #dc2626; }
+.relatorio-menu { position: absolute; top: 100%; right: 0; margin-top: 6px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 99999; min-width: 230px; overflow: hidden; }
+.relatorio-menu-item { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: left; background: none; border: none; padding: 10px 14px; font-size: 13px; font-weight: 600; color: #0f172a; cursor: pointer; }
+.relatorio-menu-item:hover { background: #f8fafc; }
+.relatorio-menu-item + .relatorio-menu-item { border-top: 1px solid #f1f5f9; }
+.relatorio-menu-sub { font-size: 11px; font-weight: 500; color: #64748b; }
+
+.btn-print { background: white; color: #0f172a; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.btn-excel-rec { background: #10b981; color: white; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2); }
+.btn-excel-desp { background: #0284c7; color: white; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2); }
+.btn-clear { background: #fee2e2; color: #dc2626; }
+
+/* Rótulo estático da barra de controles do módulo Saúde (antes inline) */
+.controls-label { padding: 8px 16px; font-size: 13px; color: #64748b; font-weight: 600; }

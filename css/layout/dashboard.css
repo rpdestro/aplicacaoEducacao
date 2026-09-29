@@ -1,0 +1,19 @@
+/* ==========================================================================
+   DASHBOARD PRINCIPAL (PÓS-UPLOAD)
+   Painel, abas (tabs), container de módulo e separadores de seção.
+   ========================================================================== */
+.dashboard-panel {
+    background-color: #f1f5f9; padding: 40px; border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4); margin: 40px auto 0 auto;
+    width: 100%; max-width: 1300px; box-sizing: border-box;
+}
+
+/* --- ABAS (TABS) --- */
+.tabs-wrapper { background: #e2e8f0; padding: 6px; border-radius: 14px; display: flex; width: 100%; max-width: 450px; margin: 0 auto 32px auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.04); }
+.tab-btn { flex: 1; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; border: none; text-align: center; border-radius: 10px; background: transparent; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.tab-btn.active { background: white; color: #0284c7; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+.dashboard-module { width: 100%; box-sizing: border-box; background: white; padding: 32px; border-radius: 16px; box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+
+.section-separator { margin: 30px 0 16px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+.section-separator h4 { margin: 0; color: #0f172a; font-size: 1.1rem; }

@@ -1,0 +1,17 @@
+/* ==========================================================================
+   VARIÁVEIS GLOBAIS (DESIGN TOKENS)
+   Cores e superfícies reutilizadas por toda a aplicação.
+   ========================================================================== */
+:root {
+    --bg-color: #8D8681;
+    --text-main: #ffffff;
+    --text-muted: #e2e8f0;
+    --card-bg: rgba(15, 23, 42, 0.45);
+    --card-border: rgba(255, 255, 255, 0.15);
+    --primary: #2563eb;
+    --success-light: rgba(16, 185, 129, 0.15);
+    --success: #10b981; 
+    --danger-light: rgba(239, 68, 68, 0.15);
+    --danger: #ef4444; 
+    --dropzone-bg: rgba(15, 23, 42, 0.3);
+}

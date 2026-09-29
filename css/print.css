@@ -1,0 +1,80 @@
+/* ==========================================================================
+   ESTILOS DE IMPRESSÃO (PDF VETORIZADO E SEM CORTES)
+   Regras @media print compartilhadas por Educação, Saúde e Relatório Simples.
+   ========================================================================== */
+@media print {
+    body { background: white !important; padding: 0 !important; margin: 0 !important; }
+    body * { visibility: hidden; }
+    #dashboard, #dashboard * { visibility: visible; }
+    #dashboard { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none !important; padding: 0 !important; margin: 0 !important; background: white !important;}
+    
+    .tabs-wrapper, .controls-bar, .btn-carregar-mais { display: none !important; }
+
+    /* Ao imprimir o Relatório Completo da Saúde, o painel de Educação
+       precisa ficar totalmente fora do fluxo — e não só oculto por
+       .hidden — porque a regra abaixo ("#modulo-receitas, #modulo-despesas")
+       força esses dois containers de Educação a ficarem visíveis durante
+       QUALQUER impressão, mesmo com a classe .hidden aplicada. display:none
+       no ancestral #conteudo-modulo-educacao os remove de vez do documento. */
+    body.imprimindo-saude #conteudo-modulo-educacao { display: none !important; }
+    
+    /* Classe que esconde os elementos indesejados no PDF */
+    .no-print { display: none !important; }
+
+    #modulo-receitas, #modulo-despesas { 
+        position: relative !important; display: block !important; 
+        box-shadow: none !important; border: none !important; 
+        padding: 0 !important; margin: 0 !important; 
+    }
+    
+    #modulo-despesas { page-break-before: always !important; break-before: page !important; margin-top: 40px !important; }
+
+    .responsive-table, div[style*="overflow"] { overflow: visible !important; max-height: none !important; }
+    
+    .section-separator, h2, h3, h4, .bloco-cabecalho {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+    }
+    
+    tr, .bloco-relatorio, .bloco-despesa-row, .detalhamento-card, .chart-section, .fundeb-matrix,
+    .resumo-card-container, .resumo-item, .official-header, .bar-total {
+        page-break-inside: avoid !important; 
+        break-inside: avoid !important; 
+    }
+    
+    thead { display: table-header-group !important; }
+    
+    canvas { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; max-width: 100% !important; }
+    .select-referencia { appearance: none !important; -webkit-appearance: none !important; background: transparent !important; border: none !important; color: #0f172a !important; font-weight: 700 !important; padding: 0 !important; }
+
+    @page { size: A4; margin: 12mm; }
+
+    /* Quando o modo "Relatório Simples" está ativo, escondemos o dashboard
+       completo e mostramos apenas o container #relatorio-simples (1 página).
+       Importante: usar display:none (e não apenas visibility:hidden) no
+       dashboard, pois visibility:hidden mantém o espaço/altura do elemento
+       no fluxo do documento, o que gerava várias páginas em branco antes
+       do conteúdo do relatório simples ser impresso. */
+    body.modo-relatorio-simples #dashboard { display: none !important; }
+    body.modo-relatorio-simples #relatorio-simples {
+        display: block !important; visibility: visible !important;
+        /* Assim como o #dashboard acima, usamos position:absolute para tirar
+           este container do fluxo normal do documento. Com position:static,
+           ele herdava o espaço em branco reservado por .page-header e
+           #upload-section (que ficam com visibility:hidden, mas continuam
+           ocupando espaço no layout por não terem display:none), o que
+           empurrava todo o conteúdo para baixo e gerava a folha com uma
+           área vazia enorme no topo. */
+        position: absolute !important; left: 0 !important; top: 0 !important;
+        width: 100%;
+    }
+    body.modo-relatorio-simples #relatorio-simples * { visibility: visible !important; }
+
+    /* Evita cortar linhas/tabelas do relatório simples no meio, entre páginas */
+    body.modo-relatorio-simples .rs-tabela tr,
+    body.modo-relatorio-simples .rs-header,
+    body.modo-relatorio-simples .rs-bar,
+    body.modo-relatorio-simples .rs-subtitulo { page-break-inside: avoid !important; break-inside: avoid !important; }
+    body.modo-relatorio-simples .rs-secao,
+    body.modo-relatorio-simples .rs-bar { page-break-after: avoid !important; break-after: avoid !important; }
+}

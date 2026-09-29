@@ -1,0 +1,10 @@
+/* ==========================================================================
+   BARRAS DE TOTAL
+   Faixas escuras com totais consolidados.
+   ========================================================================== */
+.bar-total { color: white; padding: 16px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+.bar-total-dark { background: linear-gradient(to right, #0f172a, #1e293b); }
+.bar-total-indigo { background: linear-gradient(to right, #4338ca, #4f46e5); margin-bottom: 32px;}
+.bar-total-blue { background: linear-gradient(to right, #0284c7, #0369a1); margin-bottom: 32px;}
+.bar-total-label { font-weight: 600; font-size: 14px; }
+.bar-total-value { font-weight: 700; font-size: 18px; font-family: 'Consolas', monospace; }

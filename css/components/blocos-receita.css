@@ -1,0 +1,27 @@
+/* ==========================================================================
+   BLOCOS DE RELATÓRIO DE RECEITAS
+   Blocos com cabeçalho colorido + tabela de lançamentos (código | descrição | valor).
+   ========================================================================== */
+.bloco-relatorio { margin-bottom: 24px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; transition: transform 0.2s ease, box-shadow 0.2s ease !important; }
+.bloco-relatorio:hover { transform: scale(1.005); box-shadow: 0 6px 12px rgba(0,0,0,0.08) !important; }
+.bloco-cabecalho { border-bottom: 1px solid #e2e8f0; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+.bloco-title { font-weight: 600; color: #0f172a; font-size: 14px; letter-spacing: -0.3px; }
+.bloco-value { font-weight: 700; font-size: 16px; font-family: 'Consolas', monospace; }
+
+/* Temas Receitas */
+.theme-green-light .bloco-cabecalho { background-color: #f0fdf4; border-left: 4px solid #10b981; } .theme-green-light .bloco-value { color: #10b981; }
+.theme-emerald .bloco-cabecalho { background-color: #ecfdf5; border-left: 4px solid #059669; } .theme-emerald .bloco-value { color: #059669; }
+.theme-teal-light .bloco-cabecalho { background-color: #f0fdf4; border-left: 4px solid #34d399; } .theme-teal-light .bloco-value { color: #34d399; }
+.theme-blue-light .bloco-cabecalho { background-color: #f0f9ff; border-left: 4px solid #0284c7; } .theme-blue-light .bloco-value { color: #0284c7; }
+.theme-amber .bloco-cabecalho { background-color: #fffbeb; border-left: 4px solid #f59e0b; } .theme-amber .bloco-value { color: #f59e0b; }
+.theme-sky .bloco-cabecalho { background-color: #f0f9ff; border-left: 4px solid #0ea5e9; } .theme-sky .bloco-value { color: #0ea5e9; }
+
+/* Tabelas internas dos Blocos */
+.table-responsive { overflow-x: auto; }
+.table-lancamentos { width: 100%; border-collapse: collapse; }
+.table-lancamentos tr { border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s; }
+.table-lancamentos td { padding: 10px 16px; font-size: 13px; }
+.col-nat { font-family: 'Consolas', monospace; color: #475569; width: 220px; }
+.col-desc { color: #1e293b; }
+.col-val { text-align: right; font-family: 'Consolas', monospace; font-weight: 600; color: #0f172a; width: 160px; white-space: nowrap; }
+.col-empty { padding: 16px; text-align: center; color: #94a3b8; font-size: 13px; font-style: italic; }

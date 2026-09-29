@@ -1,0 +1,30 @@
+/* ==========================================================================
+   BLOCOS DE DESPESAS (HORIZONTAIS)
+   Linhas Empenhado / Liquidado / Pago por Função/Subfunção e seus temas.
+   ========================================================================== */
+/* Temas Despesas */
+.theme-blue .bloco-cabecalho, .theme-blue .bloco-despesa-header { background-color: #eff6ff; border-left: 4px solid #3b82f6; } 
+.theme-blue .bloco-value, .theme-blue .val-pag { color: #3b82f6; }
+
+.theme-indigo .bloco-cabecalho, .theme-indigo .bloco-despesa-header { background-color: #eef2ff; border-left: 4px solid #6366f1; } 
+.theme-indigo .bloco-value, .theme-indigo .val-pag { color: #6366f1; }
+
+.theme-violet .bloco-cabecalho, .theme-violet .bloco-despesa-header { background-color: #f5f3ff; border-left: 4px solid #8b5cf6; } 
+.theme-violet .bloco-value, .theme-violet .val-pag { color: #8b5cf6; }
+
+.theme-teal-dark .bloco-cabecalho, .theme-teal-dark .bloco-despesa-header { background-color: #f0fdfa; border-left: 4px solid #14b8a6; } 
+.theme-teal-dark .bloco-value, .theme-teal-dark .val-pag { color: #14b8a6; }
+
+.bloco-despesa-row { margin-bottom: 16px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 4px -1px rgba(0,0,0,0.05); display: flex; align-items: stretch; overflow: hidden; transition: transform 0.2s ease, box-shadow 0.2s ease !important;}
+.bloco-despesa-row:hover { transform: scale(1.005); box-shadow: 0 6px 12px rgba(0,0,0,0.08) !important; }
+.bloco-despesa-header { color: #0f172a; padding: 16px 20px; font-weight: 600; font-size: 14px; display: flex; align-items: center; width: 180px; flex-shrink: 0; border-right: 1px solid #e2e8f0; }
+.bloco-despesa-body { padding: 12px 20px; display: flex; justify-content: flex-end; align-items: center; gap: 24px; font-size: 14px; flex-grow: 1; background: white; }
+.bloco-despesa-item { color: #64748b; width: 220px; text-align: right; font-size: 13px; }
+.bloco-despesa-item strong { font-family: 'Consolas', monospace; font-size: 15px; }
+
+/* Variante para rótulos mais longos (ex.: módulo Saúde), que não cabem numa
+   única linha de 180px: título e subtítulo empilhados numa coluna mais larga. */
+.bloco-despesa-header.bloco-despesa-header-wide { width: 280px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; }
+.bloco-despesa-titulo { font-weight: 700; font-size: 14px; }
+.bloco-despesa-subtitulo { font-weight: 400; font-size: 11.5px; color: #64748b; line-height: 1.4; }
+.val-emp, .val-liq { color: #1e293b; }

@@ -1,0 +1,23 @@
+/* ==========================================================================
+   MATRIZ FUNDEB
+   Tabela de acompanhamento dos vínculos 261/262 e percentuais.
+   ========================================================================== */
+.fundeb-matrix { background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; margin-bottom: 32px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+.fundeb-matrix-header { background-color: #f8fafc; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+.fundeb-matrix-header h3 { margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 700; }
+.fundeb-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.fundeb-table th { background-color: #93c5fd; color: #1e3a8a !important; font-weight: bold; border-bottom: 1px solid #60a5fa; text-align: center; padding: 12px; border-right: 1px solid #60a5fa; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+.fundeb-table th.text-right { text-align: right; border-right: none; }
+.fundeb-table tbody { font-family: 'Consolas', monospace; text-align: right; }
+.fundeb-table td { padding: 10px; border-right: 1px solid #e2e8f0; }
+.fundeb-table td:last-child { border-right: none; }
+.val-row { border-bottom: 1px solid #f1f5f9; color: #1e293b; }
+.val-row td.text-center { text-align: center; }
+.linha-total-fundeb { background-color: #93c5fd; font-weight: bold; color: #1e3a8a; border-bottom: 1px solid #cbd5e1; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+.linha-total-fundeb:hover td { background-color: #93c5fd !important; }
+.linha-total-fundeb td.text-center { text-align: center; border-right: 1px solid #60a5fa; }
+.pct-row { background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+.pct-label { font-weight: bold; color: #475569; vertical-align: middle; text-align: center; width: 140px; font-family: 'Inter', sans-serif; }
+.pct-desc { text-align: center; font-family: 'Inter', sans-serif; font-weight: 600; color: #334155; }
+.pct-desc span { font-size: 11px; color: #64748b; font-weight: 500; }
+.pct-val { font-weight: bold; color: #1e293b; }

@@ -1,0 +1,15 @@
+/* ==========================================================================
+   CABEÇALHO OFICIAL (RELATÓRIO)
+   Brasão, títulos da Prefeitura, seletor de referência e selo da legislação.
+   ========================================================================== */
+.official-header { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px 20px; margin-bottom: 32px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.03); text-align: center; position: relative; overflow: hidden; }
+.official-header-top { position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, #0284c7, #10b981); }
+.official-header-logo { height: 85px; width: auto; margin-bottom: 16px; object-fit: contain; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.official-header-title { margin: 0 0 4px 0; font-size: 1.15rem; color: #0f172a; font-weight: 700; letter-spacing: -0.5px; }
+.official-header-sub { margin: 0 0 6px 0; font-size: 0.95rem; color: #475569; font-weight: 600; }
+.official-header-desc { margin: 0 0 24px 0; font-size: 0.85rem; color: #64748b; }
+
+.badges-container { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.badge-ref { background: #f8fafc; border: 1px solid #cbd5e1; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 500; color: #475569; display: flex; align-items: center;}
+.select-referencia { background: transparent; border: none; font-weight: 700; color: #0f172a; font-family: 'Inter', sans-serif; font-size: 12px; cursor: pointer; outline: none; margin-left: 4px; }
+.badge-lei { background: #f0fdf4; border: 1px solid #a7f3d0; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; color: #047857; }
