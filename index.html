@@ -31,72 +31,47 @@
     <div class="page-header">
         <span class="version-badge">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            Consulta de Recursos Vinculados ao FUNDEB - V3.1.1
+            Recursos Vinculados ao FUNDEB - V3.2
         </span>
         <h2 class="page-title">Departamento de Planejamento e Orçamento</h2>
         <p class="page-subtitle">Análise consolidada de <strong>Receitas</strong> e <strong>Despesas</strong></p>
     </div>
 
-    <!-- SEÇÃO DE UPLOAD -->
+    <!-- SEÇÃO DE UPLOAD UNIFICADA -->
     <div id="upload-section">
-        <div class="upload-grid">
-            <div class="upload-card receitas-card">
-                <div>
-                    <div class="card-header">
-                        <div class="icon-box receitas">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
-                        </div>
-                        <div class="card-title-group">
-                            <h3>Receitas</h3>
-                            <span>Nat.Despesa R • Descrição K • Valor AB</span>
-                        </div>
-                    </div>
-                    <label for="csv-receitas" class="dropzone" id="drop-zone-receitas">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        <span class="dropzone-title" id="label-receitas">Arraste o CSV ou clique para selecionar</span>
-                        <span class="dropzone-subtitle">CSV com até 80 colunas • separador ; ou ,</span>
-                        <input type="file" id="csv-receitas" accept=".csv" class="hidden">
-                    </label>
+        <div class="upload-container">
+            <label for="csv-unificado" class="dropzone dropzone-unified" id="drop-zone-unificada">
+                <div class="dropzone-icon-glow">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
                 </div>
-                <div class="mapping-area">
-                    <span class="mapping-label">Mapeamento:</span>
-                    <span class="mapping-badge">R=17</span>
-                    <span class="mapping-badge">K=10</span>
-                    <span class="mapping-badge">AB=27</span>
-                </div>
-            </div>
+                <span class="dropzone-title">Arraste os arquivos de Receita e Despesa aqui</span>
+                <span class="dropzone-subtitle">Selecione ou solte os 2 arquivos CSV juntos (ou um por vez)</span>
+                <span class="dropzone-hint">Detecção e classificação automática dos dados</span>
+                <input type="file" id="csv-unificado" accept=".csv" multiple class="hidden">
+            </label>
 
-            <div class="upload-card despesas-card">
-                <div>
-                    <div class="card-header">
-                        <div class="icon-box despesas">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="7" x2="7" y2="17"></line><polyline points="17 17 7 17 7 7"></polyline></svg>
-                        </div>
-                        <div class="card-title-group">
-                            <h3>Despesas</h3>
-                            <span>BJ • BW • L • N • P</span>
-                        </div>
-                    </div>
-                    <label for="csv-despesas" class="dropzone" id="drop-zone-despesas">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        <span class="dropzone-title" id="label-despesas">Arraste o CSV ou clique para selecionar</span>
-                        <span class="dropzone-subtitle">CSV com até 80 colunas • separador ; ou ,</span>
-                        <input type="file" id="csv-despesas" accept=".csv" class="hidden">
-                    </label>
+            <!-- Cards de Status dos Arquivos Detectados -->
+            <div class="upload-status-grid">
+                <div id="upload-status-receitas" class="status-card">
+                    <!-- Preenchido dinamicamente via JS -->
                 </div>
-                <div class="mapping-area">
-                    <span class="mapping-label">Mapeamento:</span>
-                    <span class="mapping-badge">BJ=61</span>
-                    <span class="mapping-badge">BW=74</span>
-                    <span class="mapping-badge">L=11</span>
+                <div id="upload-status-despesas" class="status-card">
+                    <!-- Preenchido dinamicamente via JS -->
                 </div>
             </div>
         </div>
 
         <div class="btn-wrapper">
-            <button id="btn-processar" class="btn-primary">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                Processar e Carregar Dados
+            <button id="btn-processar" class="btn-primary" disabled>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <span class="btn-text">Aguardando 2 arquivos CSV...</span>
             </button>
         </div>
     </div>
