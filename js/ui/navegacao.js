@@ -20,16 +20,71 @@ Object.assign(SIOPEApp.ui, {
         });
     },
 
-    /** Mostra o nome do CSV anexado dentro da dropzone. */
-    nomeArquivo(tipo, input) {
-        const lbl = document.getElementById(`label-${tipo}`);
-        if (input.files && input.files[0]) {
-            const n = SIOPEApp.utils.sanitizar(input.files[0].name);
-            lbl.textContent = n;
-            document.querySelector(`#drop-zone-${tipo} .dropzone-subtitle`).innerHTML =
-                `<span class="upload-ok upload-ok--${tipo}">✓</span> <span class="upload-ok-texto upload-ok--${tipo}">${n} anexado</span>`;
+    /** Atualiza o card de feedback visual de um arquivo ('receitas' ou 'despesas'). */
+    atualizarStatusUpload(tipo, info) {
+        const u = SIOPEApp.utils;
+        const card = document.getElementById(`upload-status-${tipo}`);
+        const btnProc = document.getElementById('btn-processar');
+        if (!card) return;
+
+        if (!info) {
+            // Estado vazio / aguardando
+            card.classList.remove('status-loaded');
+            card.innerHTML = `
+                <div class="status-card-inner status-empty">
+                    <div class="status-icon ${tipo}">
+                        ${tipo === 'receitas' ? '↗' : '↘'}
+                    </div>
+                    <div class="status-info">
+                        <span class="status-title">${tipo === 'receitas' ? 'Receitas' : 'Despesas'}</span>
+                        <span class="status-desc">Aguardando arquivo...</span>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Estado carregado com feedback detalhado
+            card.classList.add('status-loaded');
+            const tamFmt = u.formatarBytes(info.file.size);
+            const linhasFmt = info.linhas ? info.linhas.toLocaleString('pt-BR') : '0';
+            const mapeamento = tipo === 'receitas' 
+                ? 'R=17 • K=10 • AB=27' 
+                : 'BJ=61 • BW=74 • L=11 • N=13 • P=15';
+
+            card.innerHTML = `
+                <div class="status-card-inner status-active">
+                    <div class="status-icon ${tipo}">
+                        ${tipo === 'receitas' ? '✓' : '✓'}
+                    </div>
+                    <div class="status-info">
+                        <div class="status-header-row">
+                            <span class="status-title">${tipo === 'receitas' ? 'Receitas' : 'Despesas'} Detectadas</span>
+                            <button type="button" class="btn-remove-file" title="Remover este arquivo" onclick="SIOPEApp.events.removerArquivo('${tipo}')">✕</button>
+                        </div>
+                        <span class="status-filename" title="${u.sanitizar(info.file.name)}">${u.sanitizar(info.file.name)}</span>
+                        <div class="status-meta">
+                            <span class="status-badge">${tamFmt}</span>
+                            <span class="status-badge">${linhasFmt} linhas</span>
+                            <span class="status-badge status-badge-map">${mapeamento}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Habilita ou desabilita o botão principal de processamento
+        const pendentes = SIOPEApp.state.arquivosPendentes;
+        const ambosProntos = pendentes.receitas && pendentes.despesas;
+        if (btnProc) {
+            btnProc.disabled = !ambosProntos;
+            btnProc.classList.toggle('btn-ready', ambosProntos);
+            const txt = ambosProntos 
+                ? '✓ Processar e Carregar Dados' 
+                : 'Aguardando 2 arquivos CSV...';
+            const spanTxt = btnProc.querySelector('.btn-text');
+            if (spanTxt) spanTxt.textContent = txt;
         }
     },
+
 
     /** Alterna as sub-abas Receitas / Despesas do módulo Educação. */
     abas(aba) {

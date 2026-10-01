@@ -11,7 +11,11 @@ SIOPEApp.state = {
     chartRecInst: null,    // instâncias Chart.js (destruídas antes de redesenhar)
     chartDespInst: null,
     chartSaudeInst: null,
-    fundebTotal: 1         // base de cálculo dos percentuais 261/262
+    fundebTotal: 1,        // base de cálculo dos percentuais 261/262
+    arquivosPendentes: {
+        receitas: null,    // { file, text, linhas }
+        despesas: null     // { file, text, linhas }
+    }
 };
 
 /** Volta a paginação ao valor inicial (usado após filtrar/limpar/carregar). */
