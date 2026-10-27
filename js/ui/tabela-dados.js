@@ -20,7 +20,9 @@ Object.assign(SIOPEApp.ui, {
         if (!dados.length) { cont.innerHTML = `<p class="col-empty">Sem dados.</p>`; return; }
 
         const mapa = SIOPEApp.config.mapaColunas;
-        const cabs = Object.keys(dados[0]);
+        // Campos usados só pelo cálculo do módulo Saúde não aparecem na tabela
+        const ocultas = ['Função', 'Subfunção', 'Órgão', 'Vínculo (Receita)'];
+        const cabs = Object.keys(dados[0]).filter(c => !ocultas.includes(c));
         let h = `<div class="responsive-table"><table class="tabela-moderna"><thead><tr>`;
 
         cabs.forEach((c, idx) => {
